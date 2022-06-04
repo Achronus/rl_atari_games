@@ -37,14 +37,54 @@ The file structure for the artefact is outlined below.
 |   +-- render.py
 +-- .coverage
 +-- .coveragerc
-+-- main.py
-+-- rl_with_atari.ipynb
++-- .env
 +-- LICENSE
++-- main.py
 +-- README.md
 +-- requirements.txt
++-- rl_with_atari.ipynb
 ```
-- `\agents`: contains the RL algorithm implementations
-- `\core`: core functionality of the artefact
-- `\models`: neural network models for the agents
-- `\tests`: unit tests for the application
-- `\utils`: utility classes and functions that provide extra functionality
+- `\agents` - contains the RL algorithm implementations
+- `\core` - core functionality of the artefact
+- `\models` - neural network models for the agents
+- `\tests` - unit tests for the application
+- `\utils` - utility classes and functions that provide extra functionality
+
+## Dependencies
+This project requires a Python 3.10 environment, which can be created with the following instructions:
+
+1. Create (and activate) a new environment.
+
+   - Linux or Mac
+    ```bash
+    conda create --name rlatari python=3.10
+    source activate rlatari
+    ```
+
+   - Windows
+   ```bash
+   conda create --name rlatari python=3.10
+   activate rlatari
+   ```
+
+2. Clone the repository, navigate to the `rl_atari_games/` folder and install the required dependencies.
+
+    _(Note)_ a requirements.txt file is accessible within this folder detailing a list of the required dependencies.
+
+    ```bash
+    git clone https://github.com/Achronus/rl_atari_games.git
+    cd rl_atari_games
+    conda install -c conda-forge jupyterlab
+    conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
+    pip install -r requirements.txt
+    ```
+
+3. Create an [IPython kernel](http://ipython.readthedocs.io/en/stable/install/kernel_install.html) for the `rlatari` environment.
+
+    ```bash
+    python -m ipykernel install --user --name rlatari --display-name "rlatari"
+    ```
+
+4. Run the `jupyter-lab` command to start JupyterLab and access the Jupyter Notebook named `rl_with_atari.ipynb`, or run the `main.py` file.
+
+    _(Note)_ running the `main.py` file will train the models. It is advised to examine this file before running it.
