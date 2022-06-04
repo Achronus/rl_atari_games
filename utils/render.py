@@ -1,23 +1,25 @@
+from typing import Union
+from IPython import display
+
 import gym
 import matplotlib.pyplot as plt
-from IPython import display
-import numpy as np
 
-from agents._agent import Agent
-
-import torch
+from agents.dqn import DQN
+from agents.ppo import PPO
+from utils.helper import normalize, to_tensor
 
 
-def video_render(env: gym.Env, agent: Agent, steps: int = 3000) -> None:
+def video_render(env: gym.Env, agent: Union[DQN, PPO], steps: int = 3000) -> None:
     """Watch a video representation of an agent in a given environment."""
     state = env.reset()
 
     for _ in range(steps):
-        normalize_state = (1.0 / 255) * np.asarray(state)
-        state = torch.from_numpy(normalize_state).to(agent.config.device)
-        action_probs = agent.config.network.forward(state.unsqueeze(0))[0]
-        action = torch.distributions.Categorical(action_probs).sample().item()
-        next_state, reward, done, _ = env.step(action)
+        state = normalize(to_tensor(state)).to(agent.device)
+        if type(agent) == DQN:
+            action = agent.act(state, 0.01)  # Generate an action
+        else:  # PPO
+            action = agent.act(state)  # Generate an action
+        next_state, reward, done, info = agent.env.step(action)  # Take an action
         env.render()
 
         state = next_state
@@ -28,7 +30,7 @@ def video_render(env: gym.Env, agent: Agent, steps: int = 3000) -> None:
     env.close()
 
 
-def plot_render(env: gym.Env, agent: Agent, steps: int = 3000) -> None:
+def plot_render(env: gym.Env, agent: Union[DQN, PPO], steps: int = 3000) -> None:
     """Watch a plot representation of an agent in a given environment."""
     state = env.reset()
     img = plt.imshow(env.render(mode='rgb_array'))  # only call this once
@@ -38,11 +40,11 @@ def plot_render(env: gym.Env, agent: Agent, steps: int = 3000) -> None:
         display.display(plt.gcf())
         display.clear_output(wait=True)
 
-        normalize_state = (1.0 / 255) * np.asarray(state)
-        state = torch.from_numpy(normalize_state).to(agent.config.device)
-        action_probs = agent.config.network.forward(state.unsqueeze(0))[0]
-        action = torch.distributions.Categorical(action_probs).sample().item()
-        next_state, reward, done, _ = env.step(action)
+        if type(agent) == DQN:
+            action = agent.act(state, 0.01)  # Generate an action
+        else:  # PPO
+            action = agent.act(state)
+        next_state, reward, done, info = agent.env.step(action)  # Take an action
 
         state = next_state
 
