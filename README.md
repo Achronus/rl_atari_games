@@ -1,4 +1,4 @@
-[![Coverage Status](https://coveralls.io/repos/github/Achronus/rl_atari_games/badge.svg?branch=main)](https://coveralls.io/github/Achronus/rl_atari_games?branch=main)
+[![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/Achronus/fe21db75a7f7cf44362c0f4f5e3af670/raw/rl_atari_games__heads_main.json)]
 
 # Reinforcement Learning with Atari Games
 This repository focuses on exploring how Intrinsic Motivation (IM) effects Reinforcement Learning (RL) policy-based models. 
