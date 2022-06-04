@@ -1,5 +1,3 @@
-[![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/Achronus/fe21db75a7f7cf44362c0f4f5e3af670/raw/rl_atari_games__heads_main.json)]
-
 # Reinforcement Learning with Atari Games
 This repository focuses on exploring how Intrinsic Motivation (IM) effects Reinforcement Learning (RL) policy-based models. 
 We use a Rainbow Deep Q-Network (RDQN) to simulate off-policy and Proximal Policy Optimization (PPO) as on-policy. 
