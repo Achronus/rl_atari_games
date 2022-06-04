@@ -35,5 +35,5 @@ def test_save_model_valid() -> None:
         save_model('test', {})
         os.remove('saved_models/test.pt')
         assert True
-    except ValueError or FileNotFoundError:
+    except (ValueError, FileNotFoundError):
         assert False
