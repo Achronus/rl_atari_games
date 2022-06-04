@@ -1,4 +1,4 @@
-from utils.wrappers import ResizeObservation
+from core.wrappers import ResizeObservation
 
 import gym
 from gym.wrappers import FrameStack, GrayScaleObservation
