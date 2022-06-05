@@ -16,6 +16,7 @@ The file structure for the artefact is outlined below.
 +-- agents
 |   +-- _agent.py
 |   +-- dqn.py
+|   +-- ppo.py
 +-- core
 |   +-- buffer.py
 |   +-- env_details.py
@@ -29,10 +30,12 @@ The file structure for the artefact is outlined below.
 |   +-- test_dqn.py
 |   +-- test_env_details.py
 |   +-- test_helper.py
+|   +-- test_logger.py
 |   +-- test_models.py
 +-- utils
 |   +-- helper.py
 |   +-- logger.py
+|   +-- model_utils.py
 |   +-- plotter.py
 |   +-- render.py
 +-- .coverage
