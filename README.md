@@ -14,7 +14,6 @@ The file structure for the artefact is outlined below.
 
 ``` ANSI
 +-- agents
-|   +-- _agent.py
 |   +-- dqn.py
 |   +-- ppo.py
 +-- core
