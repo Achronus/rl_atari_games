@@ -40,11 +40,11 @@ class ReplayBuffer:
         experiences = random.sample(self.memory, k=self.batch_size)
 
         # Sample every component individually
-        states = self.__stack_and_tensor([exp.state for exp in experiences if exp is not None])
-        actions = self.__vstack_and_tensor([exp.action for exp in experiences if exp is not None]).to(torch.int64)
-        rewards = self.__vstack_and_tensor([exp.reward for exp in experiences if exp is not None])
-        next_states = self.__stack_and_tensor([e.next_state for e in experiences if e is not None])
-        dones = self.__vstack_and_tensor([exp.done for exp in experiences if exp is not None])
+        states = self.__stack_and_tensor(self.__get_experience('state', experiences))
+        actions = self.__vstack_and_tensor(self.__get_experience('action', experiences)).to(torch.int64)
+        rewards = self.__vstack_and_tensor(self.__get_experience('reward', experiences))
+        next_states = self.__stack_and_tensor(self.__get_experience('next_state', experiences))
+        dones = self.__vstack_and_tensor(self.__get_experience('done', experiences))
         return states, actions, rewards, next_states, dones
 
     def __stack_and_tensor(self, items: list) -> torch.Tensor:
@@ -60,6 +60,11 @@ class ReplayBuffer:
         Items are placed on their respective device (e.g., GPU is available).
         """
         return torch.from_numpy(np.vstack(items)).to(self.device).to(torch.float32)
+
+    @staticmethod
+    def __get_experience(item: str, experiences: list) -> list:
+        """Gets a single component of samples from a sample of experiences."""
+        return [getattr(exp, item) for exp in experiences if exp is not None]
 
     def __len__(self):
         """Returns the current size of the buffer."""

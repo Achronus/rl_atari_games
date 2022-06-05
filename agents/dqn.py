@@ -99,7 +99,7 @@ class DQN:
         self.optimizer.step()
 
         # Log details
-        self.logger.add(**dict(
+        self.log_data(**dict(
                 q_targets_next=q_targets_next,
                 q_targets=q_targets,
                 q_preds=q_preds,
@@ -131,12 +131,7 @@ class DQN:
         eps = self.params.eps_start
 
         # Output info to console
-        ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
-        buffer_idx, buffer_letter = number_to_num_letter(self.memory.buffer_size)
-        timesteps_idx, timesteps_letter = number_to_num_letter(self.params.max_timesteps)
-        print(f'Training agent on {int(ep_total_idx)}{ep_total_letter} '
-              f'episodes with {int(timesteps_idx)}{timesteps_letter.lower()} timesteps.')
-        print(f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, batch size: {self.memory.batch_size}.')
+        self.__initial_output(num_episodes)
 
         # Iterate over episodes
         for i_episode in range(1, num_episodes+1):
@@ -158,14 +153,14 @@ class DQN:
                 score += reward
 
                 # Log actions and environment info
-                self.logger.add(actions=action, env_info=info)
+                self.log_data(actions=action, env_info=info)
 
                 # Check if finished
                 if done:
                     break
 
             # Log metrics
-            self.logger.add(**dict(ep_scores=score, epsilons=eps))
+            self.log_data(**dict(ep_scores=score, epsilons=eps))
 
             # Update values
             episode_scores.append(score)
@@ -194,6 +189,15 @@ class DQN:
             ))
             print(f"Saved model at episode {i_episode} as: '{filename}'.")
 
+    def __initial_output(self, num_episodes: int) -> None:
+        """Provides basic information about the algorithm to the console."""
+        ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
+        buffer_idx, buffer_letter = number_to_num_letter(self.memory.buffer_size)
+        timesteps_idx, timesteps_letter = number_to_num_letter(self.params.max_timesteps)
+        print(f'Training agent on {self.env_details.name} with {int(ep_total_idx)}{ep_total_letter} '
+              f'episodes and {int(timesteps_idx)}{timesteps_letter.lower()} timesteps.')
+        print(f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, batch size: {self.memory.batch_size}.')
+
     def __output_progress(self, num_episodes: int, i_episode: int, print_every: int, score: int) -> None:
         """Provides a progress update on the model's training to the console."""
         first_episode = i_episode == 1
@@ -205,6 +209,10 @@ class DQN:
 
             print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
             print(f'Episode Score: {int(score)}, Train Loss: {self.logger.train_losses[i_episode]:.5f}')
+
+    def log_data(self, **kwargs) -> None:
+        """Adds data to the logger."""
+        self.logger.add(**kwargs)
 
 
 def load_dqn_model(filename: str, device: str) -> DQN:
