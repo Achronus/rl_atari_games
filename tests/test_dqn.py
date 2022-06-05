@@ -1,7 +1,7 @@
 from collections import namedtuple
 import pytest
 
-from agents.dqn import DQN, load_dqn_model
+from agents.dqn import DQN
 from core.env_details import EnvDetails
 from core.parameters import ModelParameters, DQNParameters
 from models.cnn import CNNModel
@@ -35,7 +35,6 @@ def dqn_params(env_details) -> DQNParameters:
         buffer_size=10,
         batch_size=4,
         update_steps=4,
-        target_network=network
     )
 
 
@@ -59,14 +58,6 @@ def test_dqn_act_valid(env_details, model_params, dqn_params) -> None:
     dqn = DQN(env_details, model_params, dqn_params, seed=1)
     action = dqn.act(torch.randn(env_details.input_shape), 1.0)
     assert int(action) in range(env_details.n_actions)
-
-
-def test_dqn_load_model_invalid() -> None:
-    try:
-        load_dqn_model('test', device='cpu')
-        assert False
-    except AssertionError:
-        assert True
 
 
 def test_dqn_step_valid(env_details, model_params, dqn_params, experience) -> None:

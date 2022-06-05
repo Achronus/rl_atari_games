@@ -42,7 +42,6 @@ def main() -> None:
         buffer_size=int(float(os.getenv('BUFFER_SIZE'))),
         batch_size=int(os.getenv('BATCH_SIZE')),
         update_steps=int(os.getenv('UPDATE_STEPS')),
-        target_network=network,
         eps_start=float(os.getenv('EPS_START')),
         eps_end=float(os.getenv('EPS_END')),
         eps_decay=float(os.getenv('EPS_DECAY')),

@@ -36,7 +36,7 @@ class DQN:
         self.device: str = set_device()
 
         self.local_network = model_params.network.to(self.device)
-        self.target_network = dqn_params.target_network.to(self.device)  # Fixed target network
+        self.target_network = model_params.network.to(self.device)  # Fixed target network
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
 
@@ -175,19 +175,20 @@ class DQN:
         """Saves the model when the current episode equals the save count."""
         if i_episode % save_count == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)
-            filename = f'dqn_batch{self.memory.batch_size}_ep{ep_idx}{ep_letter}'.lower()
+            filename = f'dqn_batch{self.memory.batch_size}_ep{int(ep_idx)}{ep_letter}'.lower()
 
             # Save model
-            save_model(filename, dict(
-                local_network=self.local_network.state_dict(),
-                target_network=self.target_network.state_dict(),
-                env_details=self.env_details,
-                model_params=self.model_params,
-                dqn_params=self.params,
-                logger=self.logger,
-                seed=self.seed
-            ))
-            print(f"Saved model at episode {i_episode} as: '{filename}'.")
+            save_model(filename, {
+                'local_network': self.local_network.state_dict(),
+                'target_network': self.target_network.state_dict(),
+                'env_details': self.env_details,
+                'optimizer': self.model_params.optimizer,
+                'loss_metric': self.model_params.loss_metric,
+                'dqn_params': self.params,
+                'logger': self.logger,
+                'seed': self.seed
+            })
+            print(f"Saved model at episode {i_episode} as: '{filename}.pt'.")
 
     def __initial_output(self, num_episodes: int) -> None:
         """Provides basic information about the algorithm to the console."""
@@ -213,23 +214,3 @@ class DQN:
     def log_data(self, **kwargs) -> None:
         """Adds data to the logger."""
         self.logger.add(**kwargs)
-
-
-def load_dqn_model(filename: str, device: str) -> DQN:
-    """Load model's parameters from the given filename. Files must be stored within a saved_models folder."""
-    assert os.path.exists('saved_models'), "'saved_models' folder does not exist! Have you created it?"
-    assert os.path.exists(f'saved_models/{filename}.pt'), "'filename' does not exist in the 'saved_models' folder!"
-
-    checkpoint = torch.load(f'saved_models/{filename}.pt', map_location=device)
-    env_details = checkpoint.get('env_details')
-    model_params = checkpoint.get('model_params')
-    dqn_params = checkpoint.get('dqn_params')
-    logger = checkpoint.get('logger')
-    seed = checkpoint.get('seed')
-
-    dqn = DQN(env_details, model_params, dqn_params, seed)
-    dqn.local_network.load_state_dict(checkpoint.get('local_network'), strict=False)
-    dqn.target_network.load_state_dict(checkpoint.get('target_network'), strict=False)
-    dqn.logger = logger
-    print(f"Loaded DQN model: '{filename}'.")
-    return dqn

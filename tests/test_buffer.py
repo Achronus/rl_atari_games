@@ -28,7 +28,7 @@ def test_buffer_add_valid(env_details, experience) -> None:
         assert False
 
 
-def test_buffer_stack_valid(env_details, experience) -> None:
+def test_buffer_sample_valid(env_details, experience) -> None:
     try:
         buffer = ReplayBuffer(env_details, buffer_size=10, batch_size=1,
                               device='cpu', seed=1)

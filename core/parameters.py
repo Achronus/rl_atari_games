@@ -22,7 +22,6 @@ class DQNParameters:
     buffer_size: int  # Replay buffer size
     batch_size: int  # Buffer training batch size
     update_steps: int  # How often to update the network
-    target_network: BaseModel
     eps_start: float = 1.0  # Initial epsilon
     eps_end: float = 0.01  # Greedy epsilon threshold
     eps_decay: float = 0.995  # Epsilon decay rate
