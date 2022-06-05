@@ -23,7 +23,7 @@ class DQNParameters:
     batch_size: int  # Buffer training batch size
     update_steps: int  # How often to update the network
     target_network: BaseModel
-    eps_start: float = 1.0
-    eps_end: float = 0.01
-    eps_decay: float = 0.995
-    max_timesteps: int = 1000
+    eps_start: float = 1.0  # Initial epsilon
+    eps_end: float = 0.01  # Greedy epsilon threshold
+    eps_decay: float = 0.995  # Epsilon decay rate
+    max_timesteps: int = 1000  # Max before episode end

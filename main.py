@@ -26,11 +26,13 @@ def main() -> None:
         stack_size=int(os.getenv('STACK_SIZE'))
     )
 
-    network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=SEED)
+    network = CNNModel(input_shape=env_details.input_shape,
+                       n_actions=env_details.n_actions, seed=SEED)
 
     model_params = ModelParameters(
         network=network,
-        optimizer=optim.Adam(network.parameters(), lr=LEARNING_RATE, eps=EPSILON),
+        optimizer=optim.Adam(network.parameters(), lr=LEARNING_RATE,
+                             eps=EPSILON),
         loss_metric=nn.MSELoss()
     )
 
@@ -40,7 +42,11 @@ def main() -> None:
         buffer_size=int(float(os.getenv('BUFFER_SIZE'))),
         batch_size=int(os.getenv('BATCH_SIZE')),
         update_steps=int(os.getenv('UPDATE_STEPS')),
-        target_network=network
+        target_network=network,
+        eps_start=float(os.getenv('EPS_START')),
+        eps_end=float(os.getenv('EPS_END')),
+        eps_decay=float(os.getenv('EPS_DECAY')),
+        max_timesteps=int(os.getenv('MAX_TIMESTEPS'))
     )
 
     # Create DQN instance
