@@ -1,16 +1,20 @@
 import random
 from collections import namedtuple
+import numpy as np
 
+from agents._agent import Agent
 from core.buffer import ReplayBuffer
-from core.parameters import ModelParameters, DQNParameters
+from core.parameters import DQNModelParameters, DQNParameters
 from core.env_details import EnvDetails
-from utils.helper import *
+from utils.helper import number_to_num_letter, normalize, to_tensor
 from utils.logger import DQNLogger
+
+import torch
 
 Experience = namedtuple("Experience", field_names=['state', 'action', 'reward', 'next_state', 'done'])
 
 
-class DQN:
+class DQN(Agent):
     """
     A basic Deep Q-Network that uses an experience replay buffer and fixed Q-targets.
 
@@ -20,27 +24,21 @@ class DQN:
         dqn_params (DQNParameters) - a data class containing DQN specific parameters
         seed (int) - an integer for recreating results
     """
-    def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
+    def __init__(self, env_details: EnvDetails, model_params: DQNModelParameters,
                  dqn_params: DQNParameters, seed: int) -> None:
-        self.env_details = env_details
-        self.model_params = model_params
-        self.params = dqn_params
         self.logger = DQNLogger()
-        self.seed = seed
+        super().__init__(env_details, dqn_params, seed, self.logger)
 
-        self.env = env_details.env
-        self.state_size = env_details.stack_size
         self.action_size = env_details.n_actions
-        random.seed(seed)
 
-        self.device: str = set_device()
-
+        self.memory = ReplayBuffer(env_details, dqn_params.buffer_size, dqn_params.batch_size,
+                                   self.device, seed)
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)  # Fixed target network
+
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
 
-        self.memory = ReplayBuffer(env_details, dqn_params.buffer_size, dqn_params.batch_size, self.device, seed)
         self.timestep = 0
 
     def step(self, experience: Experience) -> None:
@@ -64,7 +62,7 @@ class DQN:
             state (torch.Tensor) - current state
             epsilon (float) - current epsilon
         """
-        state = state.unsqueeze(0).to(self.device)
+        state = state.unsqueeze(0)
 
         # Set to evaluation mode and get actions
         self.local_network.eval()
@@ -99,12 +97,11 @@ class DQN:
         self.optimizer.step()
 
         # Log details
-        self.log_data(**dict(
+        self.log_data(
                 q_targets_next=q_targets_next,
                 q_targets=q_targets,
                 q_preds=q_preds,
                 train_losses=loss
-            )
         )
 
         # Update target network
@@ -127,11 +124,16 @@ class DQN:
             print_every (int) - the number of episodes before outputting information
             save_count (int) - the number of episodes before saving the model
         """
-        episode_scores = []
+        # Set initial epsilon
         eps = self.params.eps_start
 
         # Output info to console
-        self.__initial_output(num_episodes)
+        buffer_idx, buffer_letter = number_to_num_letter(self.memory.buffer_size)
+        timesteps_idx, timesteps_letter = number_to_num_letter(self.params.max_timesteps)
+        self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, '
+                                           f'batch size: {self.memory.batch_size}, '
+                                           f'max timesteps: {int(timesteps_idx)}{timesteps_letter.lower()}, '
+                                           f'network updates: {self.params.update_steps}.')
 
         # Iterate over episodes
         for i_episode in range(1, num_episodes+1):
@@ -160,57 +162,19 @@ class DQN:
                     break
 
             # Log metrics
-            self.log_data(**dict(ep_scores=score, epsilons=eps))
+            self.log_data(ep_scores=score, epsilons=eps)
 
-            # Update values
-            episode_scores.append(score)
-            eps = max(self.params.eps_end, self.params.eps_decay * eps)  # Decrease epsilon
+            # Decrease epsilon
+            eps = max(self.params.eps_end, self.params.eps_decay * eps)
 
             # Display output and save model
-            self.__output_progress(num_episodes, i_episode, print_every, score)
-            self.__save_model_condition(i_episode, save_count)
+            self._output_progress(num_episodes, i_episode, print_every)
+            self._save_model_condition(i_episode, save_count,
+                                       filename=f'dqn_batch{self.memory.batch_size}',
+                                       extra_data={
+                                           'local_network': self.local_network.state_dict(),
+                                           'target_network': self.target_network.state_dict(),
+                                           'optimizer': self.optimizer,
+                                           'loss_metric': self.loss
+                                       })
         print(f"Training complete. Access metrics from 'logger' attribute.")
-
-    def __save_model_condition(self, i_episode: int, save_count: int) -> None:
-        """Saves the model when the current episode equals the save count."""
-        if i_episode % save_count == 0:
-            ep_idx, ep_letter = number_to_num_letter(i_episode)
-            filename = f'dqn_batch{self.memory.batch_size}_ep{int(ep_idx)}{ep_letter}'.lower()
-
-            # Save model
-            save_model(filename, {
-                'local_network': self.local_network.state_dict(),
-                'target_network': self.target_network.state_dict(),
-                'env_details': self.env_details,
-                'optimizer': self.model_params.optimizer,
-                'loss_metric': self.model_params.loss_metric,
-                'dqn_params': self.params,
-                'logger': self.logger,
-                'seed': self.seed
-            })
-            print(f"Saved model at episode {i_episode} as: '{filename}.pt'.")
-
-    def __initial_output(self, num_episodes: int) -> None:
-        """Provides basic information about the algorithm to the console."""
-        ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
-        buffer_idx, buffer_letter = number_to_num_letter(self.memory.buffer_size)
-        timesteps_idx, timesteps_letter = number_to_num_letter(self.params.max_timesteps)
-        print(f'Training agent on {self.env_details.name} with {int(ep_total_idx)}{ep_total_letter} '
-              f'episodes and {int(timesteps_idx)}{timesteps_letter.lower()} timesteps.')
-        print(f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, batch size: {self.memory.batch_size}.')
-
-    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int, score: int) -> None:
-        """Provides a progress update on the model's training to the console."""
-        first_episode = i_episode == 1
-        last_episode = i_episode == num_episodes+1
-
-        if first_episode or last_episode or i_episode % print_every == 0:
-            ep_idx, ep_letter = number_to_num_letter(i_episode)  # 1000 -> 1K
-            ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
-
-            print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
-            print(f'Episode Score: {int(score)}, Train Loss: {self.logger.train_losses[i_episode]:.5f}')
-
-    def log_data(self, **kwargs) -> None:
-        """Adds data to the logger."""
-        self.logger.add(**kwargs)

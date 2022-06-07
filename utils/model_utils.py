@@ -3,7 +3,7 @@ from typing import Union
 
 from agents.dqn import DQN
 from agents.ppo import PPO
-from core.parameters import ModelParameters
+from core.parameters import DQNModelParameters
 from models.cnn import CNNModel
 
 import torch
@@ -30,7 +30,7 @@ def __load_dqn_model(filename: str, device: str) -> DQN:
     logger = checkpoint.get('logger')
     seed = checkpoint.get('seed')
 
-    model_params = ModelParameters(
+    model_params = DQNModelParameters(
         network=CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=seed),
         optimizer=checkpoint.get('optimizer'),
         loss_metric=checkpoint.get('loss_metric')

@@ -3,7 +3,7 @@ import pytest
 
 from agents.dqn import DQN
 from core.env_details import EnvDetails
-from core.parameters import ModelParameters, DQNParameters
+from core.parameters import DQNModelParameters, DQNParameters
 from models.cnn import CNNModel
 
 import torch
@@ -17,9 +17,9 @@ def env_details() -> EnvDetails:
 
 
 @pytest.fixture
-def model_params(env_details: EnvDetails) -> ModelParameters:
+def model_params(env_details: EnvDetails) -> DQNModelParameters:
     network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=1)
-    return ModelParameters(
+    return DQNModelParameters(
         network=network,
         optimizer=optim.Adam(params=network.parameters(), lr=1e-3, eps=1e-3),
         loss_metric=nn.MSELoss()
