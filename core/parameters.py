@@ -7,7 +7,7 @@ import torch.nn.modules as modules
 
 
 @dataclass
-class ModelParameters:
+class DQNModelParameters:
     """A data class for model (neural network) parameters."""
     network: BaseModel
     optimizer: optim.Optimizer
@@ -15,7 +15,22 @@ class ModelParameters:
 
 
 @dataclass
-class DQNParameters:
+class PPOModelParameters:
+    """A data class containing PPO model (neural network) parameters."""
+    actor: BaseModel
+    critic: BaseModel
+    actor_optimizer: optim.Optimizer
+    critic_optimizer: optim.Optimizer
+    loss_metric: modules.loss
+
+
+class AgentParameters:
+    """A base agent parameters class, strictly for inheriting from."""
+    pass
+
+
+@dataclass
+class DQNParameters(AgentParameters):
     """A data class for DQN parameters."""
     gamma: float  # Discount factor
     tau: float  # Soft updater for target network
@@ -26,3 +41,13 @@ class DQNParameters:
     eps_end: float = 0.01  # Greedy epsilon threshold
     eps_decay: float = 0.995  # Epsilon decay rate
     max_timesteps: int = 1000  # Max before episode end
+
+
+@dataclass
+class PPOParameters(AgentParameters):
+    """A data class for PPO parameters."""
+    gamma: float  # Discount factor
+    update_steps: int  # How often to update the network
+    clip_grad: float  # Gradient clipping
+    rollout_size: int  # Number of samples to train on
+    max_timesteps: int = 1000  # Max before rollout end
