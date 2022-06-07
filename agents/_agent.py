@@ -1,5 +1,3 @@
-import random
-
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
 from utils.helper import set_device, number_to_num_letter, save_model
@@ -16,9 +14,7 @@ class Agent:
         self.logger = logger
 
         self.device: str = set_device()
-
         self.env = env_details.env
-        random.seed(seed)
 
     def _initial_output(self, num_episodes: int, extra_info: str = '') -> None:
         """Provides basic information about the algorithm to the console."""
@@ -45,7 +41,7 @@ class Agent:
                 env_details=self.env_details,
                 params=self.params,
                 logger=self.logger,
-                seed=self.seed,
+                seed=self.seed
             )
             param_dict.update(extra_data)  # Update with extra info
             save_model(filename, param_dict)  # Save model

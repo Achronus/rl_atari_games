@@ -1,4 +1,8 @@
 import os
+import random
+import numpy as np
+
+import torch
 from dotenv import load_dotenv
 
 from agents.ppo import PPO
@@ -18,6 +22,11 @@ LEARNING_RATE = float(os.getenv('LEARNING_RATE'))
 EPSILON = float(os.getenv('EPSILON'))
 NUM_EPISODES = int(os.getenv('NUM_EPISODES'))
 
+# Seeding
+random.seed(SEED)
+np.random.seed(SEED)
+torch.manual_seed(SEED)
+
 
 def main() -> None:
     """Run main functionality of the application."""
@@ -28,7 +37,7 @@ def main() -> None:
         stack_size=int(os.getenv('STACK_SIZE'))
     )
 
-    network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=SEED)
+    network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
 
     dqn_model_params = DQNModelParameters(
         network=network,
@@ -36,8 +45,8 @@ def main() -> None:
         loss_metric=nn.MSELoss()
     )
 
-    actor = Actor(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=SEED)
-    critic = Critic(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=SEED)
+    actor = Actor(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
+    critic = Critic(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
 
     ppo_model_params = PPOModelParameters(
         actor=actor,

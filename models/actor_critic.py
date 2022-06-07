@@ -12,10 +12,9 @@ class Actor(CNNModel):
     Parameters:
         input_shape (tuple[int]) - image input dimensions (including batch size)
         n_actions (int) - number of possible actions in the environment
-        seed (int) - a number for recreating results, applied to random operations
     """
-    def __init__(self, input_shape: tuple[int, ...], n_actions: int, seed: int) -> None:
-        super().__init__(input_shape, n_actions, seed)
+    def __init__(self, input_shape: tuple[int, ...], n_actions: int) -> None:
+        super().__init__(input_shape, n_actions)
 
         conv_out_size = self.get_conv_size(input_shape)
 
@@ -40,10 +39,9 @@ class Critic(CNNModel):
     Parameters:
         input_shape (tuple[int]) - image input dimensions (including batch size)
         n_actions (int) - number of possible actions in the environment
-        seed (int) - a number for recreating results, applied to random operations
     """
-    def __init__(self, input_shape: tuple[int, ...], n_actions: int, seed: int) -> None:
-        super().__init__(input_shape, n_actions, seed)
+    def __init__(self, input_shape: tuple[int, ...], n_actions: int) -> None:
+        super().__init__(input_shape, n_actions)
 
         conv_out_size = self.get_conv_size(input_shape)
 
