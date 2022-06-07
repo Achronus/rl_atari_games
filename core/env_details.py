@@ -1,7 +1,5 @@
-from core.wrappers import ResizeObservation
-
 import gym
-from gym.wrappers import FrameStack, GrayScaleObservation
+from gym.wrappers import FrameStack, GrayScaleObservation, ResizeObservation, RecordVideo
 
 
 class EnvDetails:
@@ -13,7 +11,8 @@ class EnvDetails:
         img_size (int) - a single integer used to resize the state space, defaults to 128
         stack_size (int) - a single integer of states (images) to pass per batch, defaults to 4
     """
-    def __init__(self, gym_name: str, img_size: int = 128, stack_size: int = 4) -> None:
+    def __init__(self, gym_name: str, img_size: int = 128, stack_size: int = 4,
+                 capture_video: bool = False) -> None:
         assert isinstance(gym_name, str), f"Invalid 'env_names': {gym_name}. Expected a 'string'"
         assert isinstance(img_size, int), f"Invalid 'img_size': {img_size}. Expected type: 'int'"
         assert isinstance(stack_size, int), f"Invalid 'stack_size': {stack_size}. Expected type: 'int'"
@@ -31,15 +30,20 @@ class EnvDetails:
         self.stack_size = stack_size
 
         if gym_name != '':
-            self.__set()
+            self.__set(capture_video)
 
-    def __set(self) -> None:
+    def __set(self, capture_video: bool = False) -> None:
         """
         Sets the OpenAI Gym environment to the class instance. Passes the environment through three wrappers:
         image grey scaling, image resizing, and frame stacking.
         """
-        env = GrayScaleObservation(gym.make(self.gym_name), keep_dim=False)  # Grayscale images
+        env = gym.make(self.gym_name)
+
+        if capture_video:
+            env = RecordVideo(env, "videos")
+
         env = ResizeObservation(env, shape=self.img_size)  # default image dim: [128, 128]
+        env = GrayScaleObservation(env, keep_dim=False)  # Grayscale images
         env = FrameStack(env, num_stack=self.stack_size)  # default: 4 frames at a time
 
         self.env = env
