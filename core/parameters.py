@@ -7,6 +7,17 @@ import torch.nn.modules as modules
 
 
 @dataclass
+class EnvParameters:
+    """A data class for environment parameters."""
+    env_name: str
+    img_size: int
+    stack_size: int
+    capture_video: bool = False
+    record_every: int = 100
+    seed: int = 1
+
+
+@dataclass
 class DQNModelParameters:
     """A data class for model (neural network) parameters."""
     network: BaseModel
@@ -51,3 +62,4 @@ class PPOParameters(AgentParameters):
     clip_grad: float  # Gradient clipping
     rollout_size: int  # Number of samples to train on
     max_timesteps: int = 1000  # Max before rollout end
+    num_agents: int = 4  # Number of agents used during training
