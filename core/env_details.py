@@ -1,5 +1,13 @@
 import gym
-from gym.wrappers import FrameStack, GrayScaleObservation, ResizeObservation, RecordVideo
+from gym.wrappers import (
+    FrameStack,
+    GrayScaleObservation,
+    ResizeObservation,
+    RecordVideo,
+    RecordEpisodeStatistics
+)
+
+from core.parameters import EnvParameters
 
 
 class EnvDetails:
@@ -7,44 +15,51 @@ class EnvDetails:
     A basic class that contains an OpenAI Gym's environment details.
 
     Parameters:
-        gym_name (str) - a string of the OpenAI Gym environment name
-        img_size (int) - a single integer used to resize the state space, defaults to 128
-        stack_size (int) - a single integer of states (images) to pass per batch, defaults to 4
+        params (EnvParameters) - a data class containing environment parameters
     """
-    def __init__(self, gym_name: str, img_size: int = 128, stack_size: int = 4,
-                 capture_video: bool = False) -> None:
-        assert isinstance(gym_name, str), f"Invalid 'env_names': {gym_name}. Expected a 'string'"
-        assert isinstance(img_size, int), f"Invalid 'img_size': {img_size}. Expected type: 'int'"
-        assert isinstance(stack_size, int), f"Invalid 'stack_size': {stack_size}. Expected type: 'int'"
+    def __init__(self, params: EnvParameters) -> None:
+        assert not params.env_name == '', "'env_name' must contain an environment name!"
+        self.gym_name = params.env_name
+        self.name = self.gym_name.split('-')[0].split('/')[-1]
 
-        self.gym_name = gym_name
-        self.name = gym_name.split('-')[0].split('/')[-1]
         self.env: gym.Env = None
-
         self.obs_space: gym.Space = None
         self.action_space: gym.Space = None
-        self.input_shape: tuple = (0, 0, 0)
+        self.input_shape: tuple = None
         self.n_actions: int = 0
 
-        self.img_size = img_size
-        self.stack_size = stack_size
+        self.img_size = params.img_size
+        self.stack_size = params.stack_size
+        self.capture_video = params.capture_video
+        self.record_every = params.record_every
+        self.seed = params.seed
 
-        if gym_name != '':
-            self.__set(capture_video)
+        self.__set()
 
-    def __set(self, capture_video: bool = False) -> None:
-        """
-        Sets the OpenAI Gym environment to the class instance. Passes the environment through three wrappers:
-        image grey scaling, image resizing, and frame stacking.
-        """
+    def make_env(self) -> gym.Env:
+        """Makes a gym environments with multiple wrappers."""
         env = gym.make(self.gym_name)
+        env = RecordEpisodeStatistics(env)
 
-        if capture_video:
-            env = RecordVideo(env, "videos")
+        if self.capture_video:
+            env = RecordVideo(env, "videos", episode_trigger=lambda t: t % self.record_every == 0)
 
         env = ResizeObservation(env, shape=self.img_size)  # default image dim: [128, 128]
         env = GrayScaleObservation(env, keep_dim=False)  # Grayscale images
         env = FrameStack(env, num_stack=self.stack_size)  # default: 4 frames at a time
+
+        # Set seed for environment
+        env.seed(self.seed)
+        env.action_space.seed(self.seed)
+        env.observation_space.seed(self.seed)
+        return env
+
+    def __set(self) -> None:
+        """
+        Sets the OpenAI Gym environment to the class instance. Passes the environment through three wrappers:
+        image grey scaling, image resizing, and frame stacking.
+        """
+        env = self.make_env()
 
         self.env = env
         self.obs_space = env.observation_space
@@ -62,6 +77,8 @@ class EnvDetails:
             'input_shape': self.input_shape,
             'n_actions': self.n_actions,
             'img_size': self.img_size,
-            'stack_size': self.stack_size
+            'stack_size': self.stack_size,
+            'capture_video': self.capture_video,
+            'record_every': self.record_every
         }
         return f'{attribute_dict}'
