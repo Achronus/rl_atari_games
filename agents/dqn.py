@@ -21,17 +21,18 @@ class DQN(Agent):
     Parameters:
         env_details (EnvDetails) - a class containing parameters for the environment
         model_params (ModelParameters) - a data class containing model specific parameters
-        dqn_params (DQNParameters) - a data class containing DQN specific parameters
+        params (DQNParameters) - a data class containing DQN specific parameters
         seed (int) - an integer for recreating results
     """
     def __init__(self, env_details: EnvDetails, model_params: DQNModelParameters,
-                 dqn_params: DQNParameters, seed: int) -> None:
+                 params: DQNParameters, seed: int) -> None:
         self.logger = DQNLogger()
-        super().__init__(env_details, dqn_params, seed, self.logger)
+        super().__init__(env_details, params, seed, self.logger)
 
+        self.env = env_details.env
         self.action_size = env_details.n_actions
 
-        self.memory = ReplayBuffer(env_details, dqn_params.buffer_size, dqn_params.batch_size,
+        self.memory = ReplayBuffer(env_details, params.buffer_size, params.batch_size,
                                    self.device, seed)
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)  # Fixed target network

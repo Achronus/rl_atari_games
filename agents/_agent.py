@@ -14,7 +14,6 @@ class Agent:
         self.logger = logger
 
         self.device: str = set_device()
-        self.env = env_details.env
 
     def _initial_output(self, num_episodes: int, extra_info: str = '') -> None:
         """Provides basic information about the algorithm to the console."""
