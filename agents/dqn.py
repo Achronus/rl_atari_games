@@ -1,10 +1,10 @@
-import random
 from collections import namedtuple
 import numpy as np
+import random
 
 from agents._agent import Agent
 from core.buffer import ReplayBuffer
-from core.parameters import DQNModelParameters, DQNParameters
+from core.parameters import ModelParameters, DQNParameters
 from core.env_details import EnvDetails
 from utils.helper import number_to_num_letter, normalize, to_tensor
 from utils.logger import DQNLogger
@@ -24,12 +24,12 @@ class DQN(Agent):
         params (DQNParameters) - a data class containing DQN specific parameters
         seed (int) - an integer for recreating results
     """
-    def __init__(self, env_details: EnvDetails, model_params: DQNModelParameters,
+    def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
                  params: DQNParameters, seed: int) -> None:
         self.logger = DQNLogger()
         super().__init__(env_details, params, seed, self.logger)
 
-        self.env = env_details.env
+        self.env = env_details.make_env('dqn')
         self.action_size = env_details.n_actions
 
         self.memory = ReplayBuffer(env_details, params.buffer_size, params.batch_size,
@@ -169,7 +169,7 @@ class DQN(Agent):
             eps = max(self.params.eps_end, self.params.eps_decay * eps)
 
             # Display output and save model
-            self._output_progress(num_episodes, i_episode, print_every)
+            self.__output_progress(num_episodes, i_episode, print_every)
             self._save_model_condition(i_episode, save_count,
                                        filename=f'dqn_batch{self.memory.batch_size}',
                                        extra_data={
@@ -179,3 +179,16 @@ class DQN(Agent):
                                            'loss_metric': self.loss
                                        })
         print(f"Training complete. Access metrics from 'logger' attribute.")
+
+    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
+        """Provides a progress update on the model's training to the console."""
+        first_episode = i_episode == 1
+        last_episode = i_episode == num_episodes+1
+
+        if first_episode or last_episode or i_episode % print_every == 0:
+            ep_idx, ep_letter = number_to_num_letter(i_episode)  # 1000 -> 1K
+            ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
+
+            print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
+            print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])}, '
+                  f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f}')

@@ -8,14 +8,13 @@ from dotenv import load_dotenv
 from agents.ppo import PPO
 from core.parameters import (
     EnvParameters,
-    DQNModelParameters,
     DQNParameters,
-    PPOModelParameters,
     PPOParameters,
+    ModelParameters
 )
 from core.env_details import EnvDetails
 from agents.dqn import DQN
-from models.actor_critic import Actor, Critic
+from models.actor_critic import ActorCritic
 from models.cnn import CNNModel
 
 import torch.optim as optim
@@ -52,7 +51,7 @@ def main() -> None:
 
     network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
 
-    dqn_model_params = DQNModelParameters(
+    dqn_model_params = ModelParameters(
         network=network,
         optimizer=optim.Adam(network.parameters(), lr=LEARNING_RATE, eps=EPSILON),
         loss_metric=nn.MSELoss()
@@ -67,17 +66,14 @@ def main() -> None:
         eps_start=float(os.getenv('EPS_START')),
         eps_end=float(os.getenv('EPS_END')),
         eps_decay=float(os.getenv('EPS_DECAY')),
-        max_timesteps=int(os.getenv('DQN_MAX_TIMESTEPS'))
+        max_timesteps=int(os.getenv('MAX_TIMESTEPS'))
     )
 
-    actor = Actor(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
-    critic = Critic(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
+    actor_critic = ActorCritic(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
 
-    ppo_model_params = PPOModelParameters(
-        actor=actor,
-        critic=critic,
-        actor_optimizer=optim.Adam(network.parameters(), lr=LEARNING_RATE, eps=EPSILON),
-        critic_optimizer=optim.Adam(critic.parameters(), lr=LEARNING_RATE, eps=EPSILON),
+    ppo_model_params = ModelParameters(
+        network=actor_critic,
+        optimizer=optim.Adam(actor_critic.parameters(), lr=LEARNING_RATE, eps=EPSILON),
         loss_metric=nn.MSELoss()
     )
 
@@ -86,8 +82,11 @@ def main() -> None:
         update_steps=int(os.getenv('UPDATE_STEPS')),
         clip_grad=float(os.getenv('CLIP_GRAD')),
         rollout_size=int(os.getenv('ROLLOUT_SIZE')),
-        max_timesteps=int(os.getenv('PPO_MAX_TIMESTEPS')),
-        num_agents=int(os.getenv('NUM_AGENTS'))
+        num_agents=int(os.getenv('NUM_AGENTS')),
+        num_mini_batches=int(os.getenv('NUM_MINI_BATCHES')),
+        entropy_coef=float(os.getenv('ENTROPY_COEF')),
+        value_loss_coef=float(os.getenv('VALUE_LOSS_COEF')),
+        max_grad_norm=float(os.getenv('MAX_GRAD_NORM'))
     )
 
     # Create agent instances

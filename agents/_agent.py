@@ -17,6 +17,7 @@ class Agent:
 
     def _initial_output(self, num_episodes: int, extra_info: str = '') -> None:
         """Provides basic information about the algorithm to the console."""
+        assert isinstance(extra_info, str), "'extra_info' must be a string!"
         ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
         print(f'Training agent on {self.env_details.name} with '
               f'{int(ep_total_idx)}{ep_total_letter} episodes.')
@@ -45,20 +46,6 @@ class Agent:
             param_dict.update(extra_data)  # Update with extra info
             save_model(filename, param_dict)  # Save model
             print(f"Saved model at episode {i_episode} as: '{filename}.pt'.")
-
-    def _output_progress(self, num_episodes: int, i_episode: int, print_every: int, extra_info: str = '') -> None:
-        """Provides a progress update on the model's training to the console."""
-        first_episode = i_episode == 1
-        last_episode = i_episode == num_episodes+1
-
-        if first_episode or last_episode or i_episode % print_every == 0:
-            ep_idx, ep_letter = number_to_num_letter(i_episode)  # 1000 -> 1K
-            ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
-
-            print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
-            print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])}, '
-                  f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f}', end='')
-            print(f'{extra_info}')
 
     def log_data(self, **kwargs) -> None:
         """Adds data to the logger."""

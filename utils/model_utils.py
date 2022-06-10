@@ -3,7 +3,7 @@ from typing import Union
 
 from agents.dqn import DQN
 from agents.ppo import PPO
-from core.parameters import DQNModelParameters
+from core.parameters import ModelParameters
 from models.cnn import CNNModel
 
 import torch
@@ -26,12 +26,12 @@ def __load_dqn_model(filename: str, device: str) -> DQN:
     """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
     checkpoint = torch.load(f'saved_models/{filename}.pt', map_location=device)
     env_details = checkpoint.get('env_details')
-    dqn_params = checkpoint.get('dqn_params')
+    dqn_params = checkpoint.get('params')
     logger = checkpoint.get('logger')
     seed = checkpoint.get('seed')
 
-    model_params = DQNModelParameters(
-        network=CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions, seed=seed),
+    model_params = ModelParameters(
+        network=CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
         optimizer=checkpoint.get('optimizer'),
         loss_metric=checkpoint.get('loss_metric')
     )

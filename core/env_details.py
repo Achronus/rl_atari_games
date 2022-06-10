@@ -3,9 +3,9 @@ from gym.wrappers import (
     FrameStack,
     GrayScaleObservation,
     ResizeObservation,
-    RecordVideo,
-    RecordEpisodeStatistics
+    RecordVideo
 )
+import time
 
 from core.parameters import EnvParameters
 
@@ -22,7 +22,6 @@ class EnvDetails:
         self.gym_name = params.env_name
         self.name = self.gym_name.split('-')[0].split('/')[-1]
 
-        self.env: gym.Env = None
         self.obs_space: gym.Space = None
         self.action_space: gym.Space = None
         self.input_shape: tuple = None
@@ -36,13 +35,19 @@ class EnvDetails:
 
         self.__set()
 
-    def make_env(self) -> gym.Env:
-        """Makes a gym environments with multiple wrappers."""
-        env = gym.make(self.gym_name)
-        env = RecordEpisodeStatistics(env)
+    def make_env(self, model_type: str, idx: int = 0) -> gym.Env:
+        """
+        Makes a gym environment with multiple wrappers.
 
-        if self.capture_video:
-            env = RecordVideo(env, "videos", episode_trigger=lambda t: t % self.record_every == 0)
+        Parameters:
+            model_type (str) - name or type of the model (prepended to record video filename)
+            idx (int) - number of environment (useful for multiple environments)
+        """
+        env = gym.make(self.gym_name)
+
+        if self.capture_video and idx == 0:
+            run_name = f'{model_type}_{self.gym_name}_seed{self.seed}_{int(time.time())}'
+            env = RecordVideo(env, f"videos/{run_name}".lower(), episode_trigger=lambda t: t % self.record_every == 0)
 
         env = ResizeObservation(env, shape=self.img_size)  # default image dim: [128, 128]
         env = GrayScaleObservation(env, keep_dim=False)  # Grayscale images
@@ -52,16 +57,15 @@ class EnvDetails:
         env.seed(self.seed)
         env.action_space.seed(self.seed)
         env.observation_space.seed(self.seed)
+
         return env
 
     def __set(self) -> None:
         """
-        Sets the OpenAI Gym environment to the class instance. Passes the environment through three wrappers:
-        image grey scaling, image resizing, and frame stacking.
+        Initializes the class instance attributes.
         """
-        env = self.make_env()
+        env = self.make_env('model')
 
-        self.env = env
         self.obs_space = env.observation_space
         self.action_space = env.action_space
         self.input_shape = env.observation_space.shape
@@ -71,7 +75,6 @@ class EnvDetails:
         attribute_dict = {
             'gym_name': self.gym_name,
             'name': self.name,
-            'env': self.env,
             'obs_space': self.obs_space,
             'action_space': self.action_space,
             'input_shape': self.input_shape,

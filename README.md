@@ -23,8 +23,8 @@ The file structure for the artefact is outlined below.
 |   +-- parameters.py
 +-- models
 |   +-- _base.py
-|   +-- cnn.py
 |   +-- actor_critic.py
+|   +-- cnn.py
 +-- tests
 |   +-- test_buffer.py
 |   +-- test_dqn.py
@@ -32,6 +32,7 @@ The file structure for the artefact is outlined below.
 |   +-- test_helper.py
 |   +-- test_logger.py
 |   +-- test_models.py
+|   +-- test_ppo.py
 +-- utils
 |   +-- helper.py
 |   +-- logger.py
@@ -94,8 +95,9 @@ This project requires a Python 3.10 environment, which can be created with the f
 
 ## Versions
 The repository versions are stored within separate branches. From newest to oldest:
-- Main (latest)
-- PPO (v2)
-- DQN (v1)
+- Main (stable - one before newest)
+- RQDN (v3 - RDQN and PPO)
+- PPO  (v2 - DQN and PPO)
+- DQN  (v1 - Only DQN)
 
 _(Note)_ newer versions may contain refactors that are not in older branches.

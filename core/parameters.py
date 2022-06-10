@@ -18,20 +18,10 @@ class EnvParameters:
 
 
 @dataclass
-class DQNModelParameters:
+class ModelParameters:
     """A data class for model (neural network) parameters."""
     network: BaseModel
     optimizer: optim.Optimizer
-    loss_metric: modules.loss
-
-
-@dataclass
-class PPOModelParameters:
-    """A data class containing PPO model (neural network) parameters."""
-    actor: BaseModel
-    critic: BaseModel
-    actor_optimizer: optim.Optimizer
-    critic_optimizer: optim.Optimizer
     loss_metric: modules.loss
 
 
@@ -61,5 +51,8 @@ class PPOParameters(AgentParameters):
     update_steps: int  # How often to update the network
     clip_grad: float  # Gradient clipping
     rollout_size: int  # Number of samples to train on
-    max_timesteps: int = 1000  # Max before rollout end
     num_agents: int = 4  # Number of agents used during training
+    num_mini_batches: int = 4  # Number of mini-batches during training
+    entropy_coef: float = 0.01  # Coefficient for regularisation
+    value_loss_coef: float = 0.5  # Coefficient for decreasing value loss
+    max_grad_norm: float = 0.5  # Maximum value for gradient clipping
