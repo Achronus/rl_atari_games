@@ -21,9 +21,9 @@ The file structure for the artefact is outlined below.
 |   +-- buffer.py
 |   +-- env_details.py
 |   +-- parameters.py
-|   +-- wrappers.py
 +-- models
 |   +-- _base.py
+|   +-- actor_critic.py
 |   +-- cnn.py
 +-- tests
 |   +-- test_buffer.py
@@ -32,6 +32,7 @@ The file structure for the artefact is outlined below.
 |   +-- test_helper.py
 |   +-- test_logger.py
 |   +-- test_models.py
+|   +-- test_ppo.py
 +-- utils
 |   +-- helper.py
 |   +-- logger.py
@@ -91,3 +92,12 @@ This project requires a Python 3.10 environment, which can be created with the f
 4. Run the `jupyter-lab` command to start JupyterLab and access the Jupyter Notebook named `rl_with_atari.ipynb`, or run the `main.py` file.
 
     _(Note)_ running the `main.py` file will train the models. It is advised to examine this file before running it.
+
+## Versions
+The repository versions are stored within separate branches. From newest to oldest:
+- Main (stable - one before newest)
+- RQDN (v3 - RDQN and PPO)
+- PPO  (v2 - DQN and PPO)
+- DQN  (v1 - Only DQN)
+
+_(Note)_ newer versions may contain refactors that are not in older branches.

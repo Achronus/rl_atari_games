@@ -66,6 +66,71 @@ class ReplayBuffer:
         """Gets a single component of samples from a sample of experiences."""
         return [getattr(exp, item) for exp in experiences if exp is not None]
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the current size of the buffer."""
         return len(self.memory)
+
+
+class RolloutBuffer:
+    """
+    A rollout buffer for storing agent experiences and other useful metrics.
+
+    Parameters:
+        size (int) - number of items to store in the buffer
+    """
+    def __init__(self, size: int, num_agents: int, env_input_shape: tuple[int, ...],
+                 action_shape: tuple[int, ...]) -> None:
+        self.keys = ['states', 'actions', 'rewards', 'dones', 'log_probs', 'state_values']
+        self.size = size
+        self.num_agents = num_agents
+        self.env_input_shape = env_input_shape
+        self.action_shape = action_shape
+        self.states = None
+        self.actions = None
+
+        self.reset()
+
+    def add(self, step: int, **kwargs) -> None:
+        """Adds an item to the buffer."""
+        for key, val in kwargs.items():
+            if key not in self.keys:
+                raise ValueError(f"Invalid key! Available keys: '{self.keys}'.")
+
+            if key == 'next_state':
+                getattr(self, key)[0] = val
+            else:
+                getattr(self, key)[step] = val
+
+    def reset(self) -> None:
+        """Resets keys to placeholder values."""
+        self.states = torch.zeros((self.size, self.num_agents) + self.env_input_shape)
+        self.actions = torch.zeros((self.size, self.num_agents) + self.action_shape)
+
+        predefined_keys = ['states', 'actions']
+        for key in self.keys:
+            if key not in predefined_keys:
+                setattr(self, key, torch.zeros((self.size, self.num_agents)))
+
+    def sample(self, keys: list) -> namedtuple:
+        """Samples data from the buffer based on the provided keys."""
+        data = [getattr(self, key) for key in keys]
+        Sample = namedtuple('Sample', keys)
+        return Sample(*data)
+
+    def sample_batch(self, keys: list) -> namedtuple:
+        """
+        Samples a batch of data from the buffer based on the provided keys
+        but converts them into mini-batches before returning them.
+        """
+        data = []
+        for key in keys:
+            if key == 'states':
+                samples = getattr(self, key).reshape((-1,) + self.env_input_shape)
+            elif key == 'actions':
+                samples = getattr(self, key).reshape((-1,) + self.action_shape)
+            else:
+                samples = getattr(self, key).reshape(-1)
+            data.append(samples)
+
+        Batch = namedtuple('Batch', keys)
+        return Batch(*data)

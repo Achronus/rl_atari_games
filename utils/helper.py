@@ -46,4 +46,3 @@ def save_model(filename: str, param_dict: dict) -> None:
     """Saves a model's state dict, config object and logger object to the saved_models folder."""
     os.makedirs('saved_models', exist_ok=True)
     torch.save(param_dict, f'saved_models/{filename}.pt')
-

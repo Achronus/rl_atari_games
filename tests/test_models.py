@@ -1,21 +1,34 @@
 import _pickle
 import os
 
+import pytest
+
+from models.actor_critic import ActorCritic
 from models.cnn import CNNModel
 from utils.model_utils import load_model
 
 import torch
 
 
-def test_cnn_model_conv_size_valid() -> None:
-    cnn = CNNModel(input_shape=(4, 128, 128), n_actions=6, seed=368)
-    size = cnn.get_conv_size(input_shape=(4, 128, 128))
-    assert size == 2048
+@pytest.fixture
+def n_actions() -> int:
+    return 6
 
 
-def test_cnn_model_forward_valid() -> None:
-    cnn = CNNModel(input_shape=(4, 128, 128), n_actions=6, seed=368)
-    data = cnn.forward(torch.rand((128, 4, 128, 128)))
+@pytest.fixture
+def input_shape() -> tuple[int, int, int]:
+    return 4, 128, 128
+
+
+def test_cnn_model_conv_size_valid(n_actions, input_shape) -> None:
+    cnn = CNNModel(input_shape=input_shape, n_actions=n_actions)
+    size = cnn.get_conv_size(input_shape=input_shape)
+    assert size == 9216
+
+
+def test_cnn_model_forward_valid(n_actions, input_shape) -> None:
+    cnn = CNNModel(input_shape=input_shape, n_actions=n_actions)
+    data = cnn.forward(torch.rand((128,) + input_shape))
     assert data.shape == (128, 6)
 
 
@@ -63,3 +76,13 @@ def test_load_model_dqn_valid() -> None:
         assert True
     except (ValueError, _pickle.UnpicklingError):
         assert False
+
+
+def test_actor_critic_model_output_valid(n_actions, input_shape) -> None:
+    batch_size = 10
+    ac = ActorCritic(input_shape=input_shape, n_actions=n_actions)
+
+    action_probs, state_values = ac.forward(torch.rand((batch_size,) + input_shape))
+    ap_valid = action_probs.shape == torch.zeros((batch_size, n_actions)).shape
+    svs_valid = state_values.shape == torch.zeros((batch_size, 1)).shape
+    assert all([ap_valid, svs_valid])
