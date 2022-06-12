@@ -34,7 +34,7 @@ Can be used in conjunction with the `set_save_every()` function, in the `create.
 - `EPS_DECAY` - a `float` value that indicates the epsilon decay rate each timestep.
 - `MAX_TIMESTEPS` - an `integer` value representing the maximum number of timesteps taken in an episode.
 
-  _(Note)_ Official paper [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/1312.5602.pdf)
+_(Note)_ Official paper: [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/pdf/1312.5602.pdf)
 
 ## PPO
 
@@ -46,4 +46,4 @@ Can be used in conjunction with the `set_save_every()` function, in the `create.
 - `VALUE_LOSS_COEF` - a `float` value that acts as the value loss coefficient. `c2` in the official paper.
 - `CLIP_GRAD` - a `float` value indicating the maximum value obtainable during gradient clipping.
 
-  _(Note)_ Official paper [Proximal Policy Optimization Algorithms](https://arxiv.org/pdf/1707.06347.pdf)
+_(Note)_ Official paper: [Proximal Policy Optimization Algorithms](https://arxiv.org/pdf/1707.06347.pdf)
