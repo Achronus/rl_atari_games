@@ -1,18 +1,17 @@
-# Core Folder
+# Environment Variables
 
-This folder houses the core functionality of the application. 
+One of the main files of the application is the `create.py` file. The file provides an abstraction of functionality through the `create_model()` function, allowing users to create DQN or PPO models efficiently. 
+The function requires environment variables to be stored in a `.env` file, housed in the applications root directory.
 
-One of the main files of note is the `create.py` file. The file provides an abstraction of functionality through the `create_model()` function that allows users to create DQN or PPO models efficiently. 
-The function requires environment variables to be stored in a `.env` file, stored in the applications root directory.
-
-This readme document intends to clarify the variables required within the `.env` file. We divide the readme into four categories of parameters: environment, generic, DQN and PPO.
+This README intends to clarify the variables required within the `.env` file. We divide the readme into four categories of parameters: environment, generic, DQN and PPO.
 
 ## Environment
 
 - `ENV_1` - a `string` containing the environment OpenAI Gym name. For example, `ALE/SpaceInvaders-v5`.
 - `IMG_SIZE` - an `integer` specifying the new image dimension size after reshaping the state space. For example,
 `128` converts states into `(128, 128)`.
-- `STACK_SIZE` - an `integer` denoting the number of frames to stack together. In the Human-level control through deep reinforcement learning paper, the stack size is `4`. Stacking frames allows the agent to perceive movement.
+- `STACK_SIZE` - an `integer` denoting the number of frames to stack together. In the Human-level control through deep reinforcement learning paper, the stack size is `4`. 
+Stacking frames allows the agent to perceive movement. With an `IMG_SIZE` of 128 and `STACK_SIZE` of 4, states are defined as `(4, 128, 128)`.
 - `CAPTURE_VIDEO` - a `boolean` value (`True` or `False`) denoting whether to record video snippets of the agent.
 
 ## Generic
