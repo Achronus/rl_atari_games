@@ -36,14 +36,6 @@ def ppo(env_details, model_params, ppo_params) -> PPO:
     return PPO(env_details, model_params, ppo_params, seed=1)
 
 
-def test_ppo_act_invalid(ppo, env_details) -> None:
-    try:
-        preds = ppo.act(torch.randn(env_details.n_actions,))
-        assert False
-    except (ValueError, RuntimeError):
-        assert True
-
-
 def test_ppo_act_valid(ppo) -> None:
     ppo.network = ppo.network.cpu()
     state = normalize(to_tensor(ppo.envs.reset()))

@@ -49,10 +49,10 @@ class PPOParameters(AgentParameters):
     """A data class for PPO parameters."""
     gamma: float  # Discount factor
     update_steps: int  # How often to update the network
-    clip_grad: float  # Gradient clipping
+    loss_clip: float  # Value for surrogate clipping
     rollout_size: int  # Number of samples to train on
     num_agents: int = 4  # Number of agents used during training
     num_mini_batches: int = 4  # Number of mini-batches during training
     entropy_coef: float = 0.01  # Coefficient for regularisation
     value_loss_coef: float = 0.5  # Coefficient for decreasing value loss
-    max_grad_norm: float = 0.5  # Maximum value for gradient clipping
+    clip_grad: float = 0.5  # Maximum value for gradient clipping

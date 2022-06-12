@@ -192,3 +192,8 @@ class DQN(Agent):
             print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
             print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])}, '
                   f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f}')
+
+
+class RainbowDQN:
+    """A Rainbow Deep Q-Network that uses six extensions a-top a traditional DQN."""
+    pass

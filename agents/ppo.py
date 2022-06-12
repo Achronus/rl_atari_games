@@ -172,7 +172,7 @@ class PPO(Agent):
                 # Back-propagate loss
                 self.optimizer.zero_grad()
                 loss.backward()
-                nn.utils.clip_grad_norm_(self.network.parameters(), self.params.max_grad_norm)
+                nn.utils.clip_grad_norm_(self.network.parameters(), self.params.clip_grad)
                 self.optimizer.step()
 
                 # Add metrics to lists
@@ -200,13 +200,13 @@ class PPO(Agent):
         return 0.5 * torch.max(value_loss, value_loss_clipped).mean()
 
     def __state_value_clip(self, new_state_value: torch.Tensor, batch_state_values: torch.Tensor) -> torch.Tensor:
-        """Clips the state value using torch.clamp between a range of [-clip_grad, +clip_grad]."""
-        clip_grad = self.params.clip_grad
-        return torch.clamp(new_state_value - batch_state_values, min=-clip_grad, max=clip_grad)
+        """Clips the state value using torch.clamp between a range of [-loss_clip, +loss_clip]."""
+        loss_clip = self.params.loss_clip
+        return torch.clamp(new_state_value - batch_state_values, min=-loss_clip, max=loss_clip)
 
     def clip_surrogate(self, ratio: torch.Tensor, advantages: torch.Tensor) -> torch.Tensor:
         """Performs the clipped surrogate function, returning the updated output."""
-        clip = torch.clamp(ratio, min=1 - self.params.clip_grad, max=1 + self.params.clip_grad)
+        clip = torch.clamp(ratio, min=1 - self.params.loss_clip, max=1 + self.params.loss_clip)
         return torch.min(advantages * ratio, advantages * clip)
 
     def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
@@ -223,7 +223,7 @@ class PPO(Agent):
 
         # Output info to console
         self._initial_output(num_episodes,
-                             f'Gradient clip size: {self.params.clip_grad}, '
+                             f'Loss clip size: {self.params.loss_clip}, '
                              f'rollout size: {self.params.rollout_size}, '
                              f'num_agents: {self.params.num_agents}, '
                              f'network updates: {self.params.update_steps}, '

@@ -10,7 +10,14 @@ import torch
 
 
 def load_model(filename: str, device: str, model_type: str) -> Union[DQN, PPO]:
-    """Load a DQN or PPO model based on its given filename."""
+    """
+    Load a DQN or PPO model based on its given filename.
+
+    Parameters:
+        filename (str) - filename of the model to load (must be stored in a 'saved_models' folder)
+        device (str) - the CUDA device to load the model onto (CPU or GPU)
+        model_type (str) - the type of model to load (DQN or PPO)
+    """
     assert os.path.exists('saved_models'), "'saved_models' folder does not exist! Have you created it?"
     assert os.path.exists(f'saved_models/{filename}.pt'), "'filename' does not exist in the 'saved_models' folder!"
 
@@ -24,26 +31,42 @@ def load_model(filename: str, device: str, model_type: str) -> Union[DQN, PPO]:
 
 def __load_dqn_model(filename: str, device: str) -> DQN:
     """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
-    checkpoint = torch.load(f'saved_models/{filename}.pt', map_location=device)
-    env_details = checkpoint.get('env_details')
-    dqn_params = checkpoint.get('params')
-    logger = checkpoint.get('logger')
-    seed = checkpoint.get('seed')
+    cp_data = __get_checkpoint_data(filename, device)
 
-    model_params = ModelParameters(
-        network=CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
-        optimizer=checkpoint.get('optimizer'),
-        loss_metric=checkpoint.get('loss_metric')
-    )
-
-    dqn = DQN(env_details, model_params, dqn_params, seed)
-    dqn.local_network.load_state_dict(checkpoint.get('local_network'), strict=False)
-    dqn.target_network.load_state_dict(checkpoint.get('target_network'), strict=False)
-    dqn.logger = logger
+    dqn = DQN(cp_data['env_details'], cp_data['model_params'], cp_data['params'], cp_data['seed'])
+    dqn.local_network.load_state_dict(cp_data['other'].get('local_network'), strict=False)
+    dqn.target_network.load_state_dict(cp_data['other'].get('target_network'), strict=False)
+    dqn.logger = cp_data['logger']
     print(f"Loaded DQN model: '{filename}'.")
     return dqn
 
 
 def __load_ppo_model(filename: str, device: str) -> PPO:
     """Load a PPO model's parameters from the given filename. Files must be stored within a saved_models folder."""
-    pass
+    cp_data = __get_checkpoint_data(filename, device)
+
+    ppo = PPO(cp_data['env_details'], cp_data['model_params'], cp_data['params'], cp_data['seed'])
+    ppo.network.load_state_dict(cp_data['other'].get('network'), strict=False)
+    ppo.logger = cp_data['logger']
+    print(f"Loaded PPO model: '{filename}'.")
+    return ppo
+
+
+def __get_checkpoint_data(filename: str, device: str) -> dict:
+    """Gets the checkpoint data, creates the respective objects and return the info as a dictionary."""
+    checkpoint = torch.load(f'saved_models/{filename}.pt', map_location=device)
+    env_details = checkpoint.get('env_details')
+    core_keys = ['env_details', 'params', 'logger', 'seed', 'model_params', 'optimizer', 'loss_metrics']
+
+    return {
+        'env_details': env_details,
+        'params': checkpoint.get('params'),
+        'logger': checkpoint.get('logger'),
+        'seed': checkpoint.get('seed'),
+        'model_params': ModelParameters(
+            network=CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
+            optimizer=checkpoint.get('optimizer'),
+            loss_metric=checkpoint.get('loss_metric')
+        ),
+        'other': {key: val for key, val in checkpoint.items() if key not in core_keys}
+    }
