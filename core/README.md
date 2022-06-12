@@ -13,7 +13,8 @@ This README intends to clarify the variables required within the `.env` file. We
 - `STACK_SIZE` - an `integer` denoting the number of frames to stack together. In the Human-level control through deep reinforcement learning paper, the stack size is `4`. 
 Stacking frames allows the agent to perceive movement. With an `IMG_SIZE` of 128 and `STACK_SIZE` of 4, states are defined as `(4, 128, 128)`.
 - `CAPTURE_VIDEO` - a `boolean` value (`True` or `False`) denoting whether to record video snippets of the agent.
-- `RECORD_EVERY` - an `integer` denoting the number of episodes between each stored video. Only required if `CAPTURE_VIDEO` is `True`.
+- `RECORD_EVERY` - an `integer` denoting the number of episodes between each stored video. Only required if `CAPTURE_VIDEO` is `True`. 
+Can be used in conjunction with the `set_save_every()` function, in the `create.py` file, to dynamically set a `SAVE_EVERY` hyperparameter for the `model.train()` method.
 
 ## Generic
 
