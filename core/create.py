@@ -48,7 +48,7 @@ def create_model(model_type: str) -> Union[DQN, PPO]:
 class SetModels:
     """A class that sets the parameters from a predefined .env file and allows creation of model instances."""
     generic_params = ['SEED', 'GAMMA', 'LEARNING_RATE', 'EPSILON', 'UPDATE_STEPS']
-    env_params = ['ENV_1', 'IMG_SIZE', 'STACK_SIZE', 'CAPTURE_VIDEO', 'SAVE_EVERY']
+    env_params = ['ENV_1', 'IMG_SIZE', 'STACK_SIZE', 'CAPTURE_VIDEO']
     dqn_params = ['TAU', 'BUFFER_SIZE', 'BATCH_SIZE', 'EPS_START', 'EPS_END', 'EPS_DECAY',
                   'MAX_TIMESTEPS']
     ppo_params = ['CLIP_GRAD', 'ROLLOUT_SIZE', 'NUM_AGENTS', 'NUM_MINI_BATCHES', 'ENTROPY_COEF',
@@ -64,7 +64,15 @@ class SetModels:
         self.lr = float(os.getenv('LEARNING_RATE'))
         self.eps = float(os.getenv('EPSILON'))
         self.capture_video = True if os.getenv('CAPTURE_VIDEO') == 'True' else False
-        self.save_every = int(os.getenv('SAVE_EVERY'))
+
+        # Handle dependent variables
+        if self.capture_video:
+            if 'RECORD_EVERY' in os.environ:
+                self.record_every = int(os.getenv('RECORD_EVERY'))
+            else:
+                raise MissingVariableError("Cannot find 'RECORD_EVERY' in .env file! Have you added it?")
+        else:
+            self.record_every = 1000  # Set default
 
         self.env_details = self.__create_env_details()
 
@@ -84,7 +92,7 @@ class SetModels:
             img_size=int(os.getenv('IMG_SIZE')),
             stack_size=int(os.getenv('STACK_SIZE')),
             capture_video=self.capture_video,
-            record_every=self.save_every,
+            record_every=self.record_every,
             seed=self.seed
         )
         return EnvDetails(env_params)
@@ -140,3 +148,14 @@ class SetModels:
             clip_grad=float(os.getenv('CLIP_GRAD'))
         )
         return PPO(self.env_details, model_params, params, self.seed)
+
+
+def set_save_every(predefined: int = 1000) -> int:
+    """
+    Returns an integer value dynamically set based on the 'RECORD_EVERY' environment variable,
+    if 'CAPTURE_VIDEO' is True and 'RECORD_EVERY' exists. Otherwise, sets it to the predefined value."""
+    load_dotenv()  # Create access to .env file
+
+    capture_video = True if os.getenv('CAPTURE_VIDEO') == 'True' else False
+    capture_valid = capture_video and 'RECORD_EVERY' in os.environ
+    return int(os.getenv('RECORD_EVERY')) if capture_valid else predefined

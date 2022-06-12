@@ -1,14 +1,14 @@
 import os
 from dotenv import load_dotenv
 
-from core.create import create_model
+from core.create import create_model, set_save_every
 
 import torch
 
 load_dotenv()  # Create access to .env file
 
 NUM_EPISODES = int(os.getenv('NUM_EPISODES'))
-SAVE_EVERY = int(os.getenv('SAVE_EVERY'))
+SAVE_EVERY = set_save_every(1000)
 
 
 def main():
