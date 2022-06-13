@@ -5,7 +5,7 @@ from agents._agent import Agent
 from core.buffer import RolloutBuffer
 from core.env_details import EnvDetails
 from core.parameters import ModelParameters, PPOParameters
-from utils.helper import to_tensor, normalize, number_to_num_letter
+from utils.helper import to_tensor, normalize, number_to_num_letter, timer
 from utils.logger import PPOLogger
 
 import torch
@@ -108,6 +108,7 @@ class PPO(Agent):
 
             preds = self.act(action_probs)  # Get an action
             next_state, reward, done, info = self.envs.step(preds['action'].numpy())  # Take an action
+            reward = max(min(reward, 1), -1)  # clip reward
 
             # Add rollout to buffer
             self.add_to_buffer(
@@ -223,33 +224,38 @@ class PPO(Agent):
 
         # Output info to console
         self._initial_output(num_episodes,
-                             f'Loss clip size: {self.params.loss_clip}, '
+                             f'Surrogate clipping size: {self.params.loss_clip}, '
                              f'rollout size: {self.params.rollout_size}, '
-                             f'num_agents: {self.params.num_agents}, '
-                             f'network updates: {self.params.update_steps}, '
+                             f'num agents: {self.params.num_agents}, '
+                             f'num network updates: {self.params.update_steps}, '
                              f'batch size: {self.batch_size}, '
                              f'training iterations: {num_updates}.')
 
-        # Iterate over training iterations
-        for i_episode in range(1, num_updates+1):
-            # Create rollouts and store in buffer
-            self.buffer.reset()  # Empty each episode
-            self.generate_rollouts()
+        # Time training
+        with timer('Total time taken:'):
+            # Iterate over training iterations
+            for i_episode in range(1, num_updates+1):
 
-            # Perform learning
-            self.learn()
+                # Time episodes
+                with timer('Time Taken:'):
+                    # Create rollouts and store in buffer
+                    self.buffer.reset()  # Empty each episode
+                    self.generate_rollouts()
 
-            # Display output and save model
-            self.__output_progress(num_updates, i_episode, print_every)
-            self._save_model_condition(i_episode, save_count,
-                                       filename=f'ppo_rollout{self.params.rollout_size}'
-                                                f'_agents{self.params.num_agents}',
-                                       extra_data={
-                                           'network': self.network.state_dict(),
-                                           'optimizer': self.optimizer,
-                                           'loss_metric': self.loss
-                                       })
-        print(f"Training complete. Access metrics from 'logger' attribute.")
+                    # Perform learning
+                    self.learn()
+
+                    # Display output and save model
+                    self.__output_progress(num_updates, i_episode, print_every)
+                    self._save_model_condition(i_episode, save_count,
+                                               filename=f'ppo_rollout{self.params.rollout_size}'
+                                                        f'_agents{self.params.num_agents}',
+                                               extra_data={
+                                                   'network': self.network.state_dict(),
+                                                   'optimizer': self.optimizer,
+                                                   'loss_metric': self.loss
+                                               })
+            print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     def __output_progress(self, train_iterations: int, i_episode: int, print_every: int) -> None:
         """Provides a progress update on the model's training to the console."""
@@ -267,7 +273,7 @@ class PPO(Agent):
                   f'Total Loss: {self.__mean_val(data.total_losses, ep)},  '
                   f'Policy Loss: {self.__mean_val(data.policy_losses, ep)},  '
                   f'Value Loss: {self.__mean_val(data.value_losses, ep)},  '
-                  f'Entropy Loss: {self.__mean_val(data.entropy_losses, ep)}')
+                  f'Entropy Loss: {self.__mean_val(data.entropy_losses, ep)},  ', end='')
 
     @staticmethod
     def __mean_val(data: torch.Tensor, i_episode: int) -> str:

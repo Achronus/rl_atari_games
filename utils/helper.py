@@ -1,10 +1,12 @@
 """
 Helper functions that are usable across the whole application.
 """
-import os
+from contextlib import contextmanager
 import math
-from typing import Union
 import numpy as np
+import os
+from datetime import datetime, timedelta
+from typing import Union
 
 import torch
 
@@ -46,3 +48,24 @@ def save_model(filename: str, param_dict: dict) -> None:
     """Saves a model's state dict, config object and logger object to the saved_models folder."""
     os.makedirs('saved_models', exist_ok=True)
     torch.save(param_dict, f'saved_models/{filename}.pt')
+
+
+@contextmanager
+def timer(message: str = '') -> None:
+    """A context manager that calculates the time a block of code takes to run."""
+    start = datetime.now()  # Start timer
+    yield
+    end = datetime.now()  # End timer
+    time_elapsed = str(end - start).split(':')
+    hrs, mins = [int(item) for item in time_elapsed[:2]]
+    secs = float(time_elapsed[-1])
+
+    # Set time string
+    time_string = ''
+    if hrs > 0:
+        time_string += f'{hrs} hrs, '
+    if mins > 0:
+        time_string += f'{mins} mins, '
+    time_string += f'{secs:.2f} secs'
+
+    print(f'{message} {time_string}.')
