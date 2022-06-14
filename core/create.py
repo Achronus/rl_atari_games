@@ -1,80 +1,82 @@
+import inspect
 import os
 import random
 from typing import Union
 from dotenv import load_dotenv
 import numpy as np
 
-from agents.dqn import DQN
+from agents.dqn import DQN, RainbowDQN
 from agents.ppo import PPO
 from core.env_details import EnvDetails
 from core.exceptions import MissingVariableError
 from core.parameters import (
-    EnvParameters,
+    BufferParameters,
     DQNParameters,
+    EnvParameters,
     PPOParameters,
-    ModelParameters
+    ModelParameters,
+    RainbowDQNParameters
 )
 from models.actor_critic import ActorCritic
 from models.cnn import CNNModel
+from models.dueling import CategoricalNoisyDueling
 
 import torch
 import torch.optim as optim
 import torch.nn as nn
 
 
-def create_model(model_type: str) -> Union[DQN, PPO]:
+def create_model(model_type: str) -> Union[DQN, RainbowDQN, PPO]:
     """Initializes predefined parameters from a .env file and creates a model of the specified type.
     Returns the model as a class instance."""
+    valid_names = ['dqn', 'ppo', 'rainbow']
     assert os.path.exists('.env'), f"'.env' file does not exist! Have you created it in '{os.getcwd()}'?"
+    if model_type.lower() not in valid_names:
+        ValueError(f"Model type '{model_type}' does not exist! Must be one of: {valid_names}.")
+
+    load_dotenv()  # Create access to .env file
 
     # Check initial parameters are stored in .env
-    set_model = SetModels()
-    seed = set_model.seed
-
-    # Seeding
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
+    name = model_type.lower()
+    CheckParamsValid(name)
 
     # Create selected model
-    if model_type.lower() == 'dqn':
-        return set_model.create_dqn()
-    elif model_type.lower() == 'ppo':
-        return set_model.create_ppo()
-    else:
-        raise ValueError(f"Model type '{model_type}' does not exist! Must be either 'DQN' or 'PPO'")
+    set_model = SetModels()
+    return set_model.create(name)
 
 
-class SetModels:
-    """A class that sets the parameters from a predefined .env file and allows creation of model instances."""
-    generic_params = ['SEED', 'GAMMA', 'LEARNING_RATE', 'EPSILON', 'UPDATE_STEPS']
-    env_params = ['ENV_1', 'IMG_SIZE', 'STACK_SIZE', 'CAPTURE_VIDEO']
-    dqn_params = ['TAU', 'BUFFER_SIZE', 'BATCH_SIZE', 'EPS_START', 'EPS_END', 'EPS_DECAY',
-                  'MAX_TIMESTEPS']
-    ppo_params = ['CLIP_GRAD', 'ROLLOUT_SIZE', 'NUM_AGENTS', 'NUM_MINI_BATCHES', 'ENTROPY_COEF',
-                  'VALUE_LOSS_COEF', 'MAX_GRAD_NORM']
+class CheckParamsValid:
+    """A class that checks if the required parameters are in the .env file."""
+    core_params = ['SEED', 'GAMMA', 'LEARNING_RATE', 'EPSILON', 'UPDATE_STEPS']
 
-    def __init__(self) -> None:
-        load_dotenv()  # Create access to .env file
+    def __init__(self, model_type: str) -> None:
+        self.env_params = self.__get_env_keys()
+        self.general_params = self.core_params + self.env_params
+        self.dqn_params = self.get_attribute_names(DQNParameters)
+        self.ppo_params = self.get_attribute_names(PPOParameters)
+        self.rainbow_params = self.get_attribute_names(RainbowDQNParameters)
+        self.buffer_params = self.get_attribute_names(BufferParameters)
 
-        # Check generic and env params exist
-        self.check_params(self.generic_params + self.env_params)
+        # Set desired parameters
+        params = self.general_params
+        if model_type == 'dqn':
+            params += self.dqn_params
+        elif model_type == 'rainbow':
+            params += self.rainbow_params + self.buffer_params
+        elif model_type == 'ppo':
+            params += self.ppo_params
 
-        self.seed = int(os.getenv('SEED'))
-        self.lr = float(os.getenv('LEARNING_RATE'))
-        self.eps = float(os.getenv('EPSILON'))
-        self.capture_video = True if os.getenv('CAPTURE_VIDEO') == 'True' else False
+        # Check parameters exist
+        self.check_params(params)
 
-        # Handle dependent variables
-        if self.capture_video:
-            if 'RECORD_EVERY' in os.environ:
-                self.record_every = int(os.getenv('RECORD_EVERY'))
-            else:
-                raise MissingVariableError("Cannot find 'RECORD_EVERY' in .env file! Have you added it?")
-        else:
-            self.record_every = 1000  # Set default
+    def __get_env_keys(self) -> list[str]:
+        """Gets the environment parameters attribute names as a list and updates certain keys.
+        Returns the updated list."""
+        keys = self.get_attribute_names(EnvParameters)
 
-        self.env_details = self.__create_env_details()
+        updated_keys = [key.replace(key, 'ENV_1') if key == 'ENV_NAME' else key for key in keys]  # ENV_NAME -> ENV_1
+        updated_keys = [key for key in updated_keys if key not in ['RECORD_EVERY', 'SEED']]  # Remove keys
+        return updated_keys
 
     @staticmethod
     def check_params(param_list: list[str]) -> None:
@@ -84,6 +86,49 @@ class SetModels:
         if len(false_bools) >= 1:
             missing_params = [param_list[i] for i in false_bools]
             raise MissingVariableError(f"Cannot find variables {missing_params} in .env file! Have you added them?")
+
+    @staticmethod
+    def get_attribute_names(cls) -> list[str]:
+        """Gets a list of attribute names for a given class."""
+        return [key.upper() for item in inspect.getmembers(cls) if item[0] == '__dict__' for key in
+                item[1]['__dataclass_fields__']]
+
+
+class SetModels:
+    """A class that sets the parameters from a predefined .env file and creates model instances."""
+    def __init__(self) -> None:
+        self.seed = int(os.getenv('SEED'))
+        self.lr = float(os.getenv('LEARNING_RATE'))
+        self.eps = float(os.getenv('EPSILON'))
+        self.capture_video = True if os.getenv('CAPTURE_VIDEO') == 'True' else False
+        self.__check_record_every()
+
+        # Seeding
+        random.seed(self.seed)
+        np.random.seed(self.seed)
+        torch.manual_seed(self.seed)
+
+        self.env_details = self.__create_env_details()
+
+    def create(self, model_name: str) -> Union[DQN, RainbowDQN, PPO]:
+        """Create a model based on the given name."""
+        if model_name == 'dqn':
+            return self.__create_dqn()
+        elif model_name == 'rainbow':
+            return self.__create_rainbow_dqn()
+        elif model_name == 'ppo':
+            return self.__create_ppo()
+
+    def __check_record_every(self) -> None:
+        """Checks if record every is set. Requires capture_video to be true, otherwise default is set."""
+        # Handle dependent variables
+        if self.capture_video:
+            if 'RECORD_EVERY' in os.environ:
+                self.record_every = int(os.getenv('RECORD_EVERY'))
+            else:
+                raise MissingVariableError("Cannot find 'RECORD_EVERY' in .env file! Have you added it?")
+        else:
+            self.record_every = 1000  # Set default
 
     def __create_env_details(self) -> EnvDetails:
         """Creates environment details class."""
@@ -97,10 +142,8 @@ class SetModels:
         )
         return EnvDetails(env_params)
 
-    def create_dqn(self) -> DQN:
+    def __create_dqn(self) -> DQN:
         """Creates DQN model from .env predefined parameters."""
-        self.check_params(self.dqn_params)
-
         network = CNNModel(input_shape=self.env_details.input_shape,
                            n_actions=self.env_details.n_actions)
 
@@ -123,10 +166,40 @@ class SetModels:
         )
         return DQN(self.env_details, model_params, params, self.seed)
 
-    def create_ppo(self) -> PPO:
-        """Creates a PPO model from .env predefined parameters."""
-        self.check_params(self.ppo_params)
+    def __create_rainbow_dqn(self) -> RainbowDQN:
+        """Creates a Rainbow DQN model from .env predefined parameters."""
+        params = RainbowDQNParameters(
+            gamma=float(os.getenv('GAMMA')),
+            tau=float(os.getenv('TAU')),
+            buffer_size=int(float(os.getenv('BUFFER_SIZE'))),
+            batch_size=int(os.getenv('BATCH_SIZE')),
+            update_steps=int(os.getenv('UPDATE_STEPS')),
+            max_timesteps=int(os.getenv('MAX_TIMESTEPS')),
+            n_atoms=int(os.getenv('N_ATOMS')),
+            v_min=int(os.getenv('V_MIN')),
+            v_max=int(os.getenv('V_MAX'))
+        )
+        network = CategoricalNoisyDueling(input_shape=self.env_details.input_shape,
+                                          n_actions=self.env_details.n_actions,
+                                          n_atoms=params.n_atoms)
+        model_params = ModelParameters(
+            network=network,
+            optimizer=optim.Adam(network.parameters(), lr=self.lr, eps=self.eps),
+            loss_metric=nn.CrossEntropyLoss()
+        )
 
+        buffer_params = BufferParameters(
+            buffer_size=int(float(os.getenv('BUFFER_SIZE'))),
+            batch_size=int(os.getenv('BATCH_SIZE')),
+            priority_exponent=float(os.getenv('PRIORITY_EXPONENT')),
+            priority_weight=float(os.getenv('PRIORITY_WEIGHT')),
+            replay_period=int(os.getenv('REPLAY_PERIOD')),
+            n_steps=int(os.getenv('N_STEPS'))
+        )
+        return RainbowDQN(self.env_details, model_params, params, buffer_params, self.seed)
+
+    def __create_ppo(self) -> PPO:
+        """Creates a PPO model from .env predefined parameters."""
         ac = ActorCritic(input_shape=self.env_details.input_shape,
                          n_actions=self.env_details.n_actions)
 
