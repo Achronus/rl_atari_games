@@ -32,7 +32,7 @@ def create_model(model_type: str) -> Union[DQN, RainbowDQN, PPO]:
     valid_names = ['dqn', 'ppo', 'rainbow']
     assert os.path.exists('.env'), f"'.env' file does not exist! Have you created it in '{os.getcwd()}'?"
     if model_type.lower() not in valid_names:
-        ValueError(f"Model type '{model_type}' does not exist! Must be one of: {valid_names}.")
+        raise ValueError(f"Model type '{model_type}' does not exist! Must be one of: {valid_names}.")
 
     load_dotenv()  # Create access to .env file
 
