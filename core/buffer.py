@@ -79,7 +79,7 @@ class SumTree:
         self.position = 0  # Pointer
         self.capacity = capacity
 
-        self.num_nodes = 2 * capacity - 1  # Internal nodes
+        self.num_nodes = 2 * capacity - 1  # All nodes
         self.priorities = torch.zeros(self.num_nodes).to(device)  # All tree nodes
         self.data = np.empty((capacity,), dtype=object)  # Data storage (leaf nodes)
         self.max_priority = 1  # initial
@@ -163,11 +163,26 @@ class SumTree:
         if child_indices[0, 0] >= self.priorities.shape[0]:
             return indices  # shape -> [batch_size,]
 
+        # Manage batch items that have finished descending tree before others (index overshooting)
+        finished_bools = torch.gt(child_indices, self.num_nodes)  # check if > num nodes
+        if torch.any(finished_bools):
+            # Get finished indices
+            _, finished_indices = torch.where(finished_bools)
+            left_size = np.count_nonzero(finished_bools[0])  # For slicing
+
+            left = finished_indices[left_size:]
+            right = finished_indices[:left_size]
+
+            # Replace child indices with old ones
+            child_indices[0][left] = indices[left]
+            child_indices[1][right] = indices[right]
+
         # Compare priorities to left node
+        # Moving down tree based on comparison -> 0 = left node, 1 = right node
         left_child_values = self.priorities[child_indices[0]]
         comparison_bools = torch.gt(priorities, left_child_values).to(torch.long)  # priority > left_child = 1, else 0
 
-        # Move down tree based on comparison -> 0 = left node, 1 = right node
+        # Set next indices
         next_indices = child_indices[comparison_bools, torch.arange(indices.size()[0])]
 
         # Reduce priorities to move down tree
@@ -181,7 +196,7 @@ class SumTree:
         Returns the priority values, data index, and tree indices."""
         init_indices = torch.zeros(priorities.shape, dtype=torch.long)  # Start for recursive tree search
         indices = self.__tree_search(init_indices, priorities)
-        data_idx = indices - self.num_nodes
+        data_idx = (self.num_nodes-1) - indices
         return {
             'priorities': self.priorities[indices],
             'transitions': self.data[data_idx],
