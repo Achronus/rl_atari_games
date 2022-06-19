@@ -56,9 +56,22 @@ def timer(message: str = '') -> None:
     start = datetime.now()  # Start timer
     yield
     end = datetime.now()  # End timer
-    time_elapsed = str(end - start).split(':')
-    hrs, mins = [int(item) for item in time_elapsed[:2]]
-    secs = float(time_elapsed[-1])
+    time_elapsed = end - start
+    return timer_string(time_elapsed, message)
+
+
+def timer_string(time_elapsed: timedelta, message: str = '') -> str:
+    """
+    Helper function for outputting a timer string.
+    Example: 01:02:13 -> '1 hrs, 2 mins, 13 secs'
+
+    Parameters:
+        time_elapsed (datetime.timedelta) - a timedelta containing a datatime time
+        message (str) - an optional message prepended to the front of the returned string
+    """
+    split_time = str(time_elapsed).split(':')
+    hrs, mins = [int(item) for item in split_time[:2]]
+    secs = float(split_time[-1])
 
     # Set time string
     time_string = ''
@@ -68,4 +81,4 @@ def timer(message: str = '') -> None:
         time_string += f'{mins} mins, '
     time_string += f'{secs:.2f} secs'
 
-    print(f'{message} {time_string}.')
+    return f'{message} {time_string}.'

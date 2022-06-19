@@ -1,4 +1,3 @@
-import inspect
 import os
 import random
 from typing import Union
@@ -55,7 +54,7 @@ class CheckParamsValid:
         self.dqn_params = self.get_attribute_names(DQNParameters)
         self.ppo_params = self.get_attribute_names(PPOParameters)
         self.rainbow_params = self.get_attribute_names(RainbowDQNParameters)
-        self.buffer_params = self.get_attribute_names(BufferParameters)
+        self.buffer_params = self.__get_buffer_keys()
 
         # Set desired parameters
         params = self.general_params
@@ -78,6 +77,14 @@ class CheckParamsValid:
         updated_keys = [key for key in updated_keys if key not in ['RECORD_EVERY', 'SEED']]  # Remove keys
         return updated_keys
 
+    def __get_buffer_keys(self) -> list[str]:
+        """Gets the buffer parameters attribute names as a list and updates certain keys.
+                Returns the updated list."""
+        keys = self.get_attribute_names(BufferParameters)
+
+        updated_keys = [key for key in keys if key not in ['INPUT_SHAPE']]  # Remove keys
+        return updated_keys
+
     @staticmethod
     def check_params(param_list: list[str]) -> None:
         """Checks if the given parameter type are set in the '.env' file."""
@@ -90,8 +97,7 @@ class CheckParamsValid:
     @staticmethod
     def get_attribute_names(cls) -> list[str]:
         """Gets a list of attribute names for a given class."""
-        return [key.upper() for item in inspect.getmembers(cls) if item[0] == '__dict__' for key in
-                item[1]['__dataclass_fields__']]
+        return [item.upper() for item in vars(cls)['__match_args__']]
 
 
 class SetModels:
@@ -149,8 +155,7 @@ class SetModels:
 
         model_params = ModelParameters(
             network=network,
-            optimizer=optim.Adam(network.parameters(), lr=self.lr, eps=self.eps),
-            loss_metric=nn.MSELoss()
+            optimizer=optim.Adam(network.parameters(), lr=self.lr, eps=self.eps)
         )
 
         params = DQNParameters(
@@ -177,25 +182,29 @@ class SetModels:
             max_timesteps=int(os.getenv('MAX_TIMESTEPS')),
             n_atoms=int(os.getenv('N_ATOMS')),
             v_min=int(os.getenv('V_MIN')),
-            v_max=int(os.getenv('V_MAX'))
+            v_max=int(os.getenv('V_MAX')),
+            replay_period=int(os.getenv('REPLAY_PERIOD')),
+            n_steps=int(os.getenv('N_STEPS')),
+            learn_frequency=int(os.getenv('LEARN_FREQUENCY')),
+            clip_grad=float(os.getenv('CLIP_GRAD')),
+            reward_clip=float(os.getenv('REWARD_CLIP'))
+        )
+        buffer_params = BufferParameters(
+            buffer_size=int(float(os.getenv('BUFFER_SIZE'))),
+            batch_size=int(os.getenv('BATCH_SIZE')),
+            priority_exponent=float(os.getenv('PRIORITY_EXPONENT')),
+            priority_weight=float(os.getenv('PRIORITY_WEIGHT')),
+            n_steps=int(os.getenv('N_STEPS')),
+            input_shape=self.env_details.input_shape
         )
         network = CategoricalNoisyDueling(input_shape=self.env_details.input_shape,
                                           n_actions=self.env_details.n_actions,
                                           n_atoms=params.n_atoms)
         model_params = ModelParameters(
             network=network,
-            optimizer=optim.Adam(network.parameters(), lr=self.lr, eps=self.eps),
-            loss_metric=nn.CrossEntropyLoss()
+            optimizer=optim.Adam(network.parameters(), lr=self.lr, eps=self.eps)
         )
 
-        buffer_params = BufferParameters(
-            buffer_size=int(float(os.getenv('BUFFER_SIZE'))),
-            batch_size=int(os.getenv('BATCH_SIZE')),
-            priority_exponent=float(os.getenv('PRIORITY_EXPONENT')),
-            priority_weight=float(os.getenv('PRIORITY_WEIGHT')),
-            replay_period=int(os.getenv('REPLAY_PERIOD')),
-            n_steps=int(os.getenv('N_STEPS'))
-        )
         return RainbowDQN(self.env_details, model_params, params, buffer_params, self.seed)
 
     def __create_ppo(self) -> PPO:
@@ -205,8 +214,7 @@ class SetModels:
 
         model_params = ModelParameters(
             network=ac,
-            optimizer=optim.Adam(ac.parameters(), lr=self.lr, eps=self.eps),
-            loss_metric=nn.MSELoss()
+            optimizer=optim.Adam(ac.parameters(), lr=self.lr, eps=self.eps)
         )
 
         params = PPOParameters(

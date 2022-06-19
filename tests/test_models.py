@@ -55,6 +55,14 @@ def test_load_model_invalid_model_type() -> None:
         assert True
 
 
+def test_load_model_rqdn_invalid_model_file() -> None:
+    try:
+        model = load_model('dqn_example', device='cpu', model_type='rainbow')
+        assert False
+    except AttributeError:
+        assert True
+
+
 def test_load_model_dqn_invalid_file_content() -> None:
     filepath = 'saved_models/test3.pt'
     try:
@@ -86,3 +94,4 @@ def test_actor_critic_model_output_valid(n_actions, input_shape) -> None:
     ap_valid = action_probs.shape == torch.zeros((batch_size, n_actions)).shape
     svs_valid = state_values.shape == torch.zeros((batch_size, 1)).shape
     assert all([ap_valid, svs_valid])
+

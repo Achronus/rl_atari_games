@@ -3,13 +3,6 @@ import pytest
 import torch
 
 from core.buffer import ReplayBuffer, RolloutBuffer
-from core.env_details import EnvDetails
-from core.parameters import EnvParameters
-
-
-@pytest.fixture
-def env_details() -> EnvDetails:
-    return EnvDetails(EnvParameters('ALE/SpaceInvaders-v5', img_size=128, stack_size=4))
 
 
 @pytest.fixture
@@ -24,20 +17,18 @@ def rollout_buffer() -> RolloutBuffer:
     return RolloutBuffer(size=1, num_agents=1, env_input_shape=(4, 128, 128), action_shape=())
 
 
-def test_replay_buffer_add_valid(env_details, experience) -> None:
+def test_replay_buffer_add_valid(experience) -> None:
     try:
-        buffer = ReplayBuffer(env_details, buffer_size=10, batch_size=1,
-                              device='cpu', seed=1)
+        buffer = ReplayBuffer(buffer_size=10, batch_size=1, device='cpu', seed=1)
         buffer.add(experience)
         assert True
     except ValueError:
         assert False
 
 
-def test_replay_buffer_sample_valid(env_details, experience) -> None:
+def test_replay_buffer_sample_valid(experience) -> None:
     try:
-        buffer = ReplayBuffer(env_details, buffer_size=10, batch_size=1,
-                              device='cpu', seed=1)
+        buffer = ReplayBuffer(buffer_size=10, batch_size=1, device='cpu', seed=1)
         buffer.add(experience)
         buffer.add(experience)
         buffer.sample()
