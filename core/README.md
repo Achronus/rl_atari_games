@@ -37,7 +37,7 @@ Can be used in conjunction with the `set_save_every()` function, in the `create.
 - `EPS_END` - a `float` value that denotes the final epsilon value. Acts as a threshold for always taking greedy actions.
 - `EPS_DECAY` - a `float` value that indicates the epsilon decay rate each timestep.
 
-  _(Note)_ Official paper: [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/abs/1312.5602)
+_(Note)_ Official paper: [Playing Atari with Deep Reinforcement Learning](https://arxiv.org/abs/1312.5602)
 
 ## Rainbow DQN
 
