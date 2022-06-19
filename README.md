@@ -30,6 +30,8 @@ The file structure for the artefact is outlined below.
 |   +-- _base.py
 |   +-- actor_critic.py
 |   +-- cnn.py
+|   +-- dueling.py
+|   +-- linear.py
 +-- tests
 |   +-- test_buffer.py
 |   +-- test_dqn.py
