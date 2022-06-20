@@ -21,12 +21,17 @@ The file structure for the artefact is outlined below.
 |   +-- ppo.py
 +-- core
 |   +-- buffer.py
+|   +-- create.py
 |   +-- env_details.py
+|   +-- exceptions.py
 |   +-- parameters.py
+|   +-- README.md
 +-- models
 |   +-- _base.py
 |   +-- actor_critic.py
 |   +-- cnn.py
+|   +-- dueling.py
+|   +-- linear.py
 +-- tests
 |   +-- test_buffer.py
 |   +-- test_dqn.py
@@ -56,6 +61,7 @@ The file structure for the artefact is outlined below.
 - `\models` - neural network models for the agents
 - `\tests` - unit tests for the application
 - `\utils` - utility classes and functions that provide extra functionality
+- `.env` - an environment variable file containing hyperparameters. Refer to the [core](/core) folder for more details
 
 ## Dependencies
 
