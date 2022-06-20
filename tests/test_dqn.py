@@ -1,25 +1,14 @@
 from collections import namedtuple
 import pytest
 
-from agents.dqn import DQN, RainbowDQN
+from agents.dqn import DQN
 from core.env_details import EnvDetails
-from core.parameters import (
-    ModelParameters,
-    DQNParameters,
-    EnvParameters,
-    Experience,
-    RainbowDQNParameters,
-    BufferParameters
-)
+from core.parameters import ModelParameters, DQNParameters, EnvParameters
 from models.cnn import CNNModel
 
 import torch
 import torch.optim as optim
 import torch.nn as nn
-
-from models.dueling import CategoricalNoisyDueling
-
-DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward', 'next_state', 'done'])
 
 
 @pytest.fixture
@@ -28,7 +17,7 @@ def env_details() -> EnvDetails:
 
 
 @pytest.fixture
-def model_params(env_details) -> ModelParameters:
+def model_params(env_details: EnvDetails) -> ModelParameters:
     network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
     return ModelParameters(
         network=network,
@@ -50,37 +39,16 @@ def dqn_params(env_details) -> DQNParameters:
 
 
 @pytest.fixture
-def dqn_experience() -> DQNExperience:
-    return DQNExperience(torch.randn((4, 128, 128)), 1, 1., torch.randn((4, 128, 128)), False)
-
-
-@pytest.fixture
-def rainbow_experience() -> Experience:
-    return Experience(torch.randn((4, 128, 128)), 1, 1., False,
-                      torch.randn((4, 128, 128)))
+def experience() -> namedtuple:
+    Experience = namedtuple("Experience", field_names=['state', 'action', 'reward',
+                                                'next_state', 'done'])
+    return Experience(torch.randn((4, 128, 128)), 1, 1.,
+                      torch.randn((4, 128, 128)), False)
 
 
 @pytest.fixture
 def dqn(env_details, model_params, dqn_params) -> DQN:
     return DQN(env_details, model_params, dqn_params, seed=1)
-
-
-@pytest.fixture
-def rdqn(env_details) -> RainbowDQN:
-    params = RainbowDQNParameters(gamma=0.99, tau=1e3, buffer_size=10, batch_size=1,
-        update_steps=3, max_timesteps=100, n_atoms=10, v_min=-10, v_max=10,
-        replay_period=10, n_steps=3, learn_frequency=3, clip_grad=0.5, reward_clip=0.1)
-    buffer_params = BufferParameters(buffer_size=10, batch_size=1, priority_exponent=0.5,
-        priority_weight=0.4, n_steps=3, input_shape=env_details.input_shape
-    )
-    network = CategoricalNoisyDueling(input_shape=env_details.input_shape,
-                                      n_actions=env_details.n_actions,
-                                      n_atoms=10)
-    model_params = ModelParameters(
-        network=network,
-        optimizer=optim.Adam(network.parameters(), lr=1e3, eps=1e3)
-    )
-    return RainbowDQN(env_details, model_params, params, buffer_params, seed=1)
 
 
 def test_dqn_creation_invalid(env_details, model_params) -> None:
@@ -98,27 +66,27 @@ def test_dqn_act_valid(dqn, env_details) -> None:
     assert int(action) in range(env_details.n_actions)
 
 
-def test_dqn_step_valid(dqn, dqn_experience) -> None:
+def test_dqn_step_valid(dqn, experience) -> None:
     try:
-        dqn.step(dqn_experience)
+        dqn.step(experience)
         assert True
     except ValueError:
         assert False
 
 
-def test_dqn_learn_invalid(dqn, dqn_experience) -> None:
+def test_dqn_learn_invalid(dqn, experience) -> None:
     try:
-        dqn.learn(dqn_experience)
+        dqn.learn(experience)
         assert False
     except RuntimeError:
         assert True
 
 
-def test_dqn_learn_valid(dqn, dqn_experience) -> None:
+def test_dqn_learn_size_valid(dqn, experience) -> None:
     try:
         dqn.local_network = dqn.local_network.to('cpu')
         dqn.target_network = dqn.target_network.to('cpu')
-        dqn.learn(dqn_experience)
+        dqn.learn(experience)
         assert False
     except RuntimeError:
         assert True
@@ -153,33 +121,4 @@ def test_dqn_train_valid(dqn) -> None:
         dqn.train(num_episodes=1, print_every=1)
         assert True
     except (ValueError, TypeError):
-        assert False
-
-
-def test_rainbow_act_valid(env_details, rdqn) -> None:
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    action = rdqn.act(torch.randn(env_details.input_shape).unsqueeze(0).to(device))
-    assert int(action) in range(env_details.n_actions)
-
-
-def test_rainbow_learn_valid(rdqn) -> None:
-    try:
-        rdqn.learn()
-        assert True
-    except (RuntimeError, TypeError, ValueError):
-        assert False
-
-
-def test_rainbow_compute_double_probs_valid(env_details, rdqn) -> None:
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    next_state = torch.randn(env_details.input_shape).unsqueeze(0).to(device)
-    q_probs = rdqn.compute_double_q_probs(next_state)
-    assert q_probs.shape == torch.rand((1, 10)).shape
-
-
-def test_rainbow_train_valid(rdqn) -> None:
-    try:
-        rdqn.train(num_episodes=1)
-        assert True
-    except (RuntimeError, TypeError, ValueError):
         assert False

@@ -34,9 +34,9 @@ class CNNModel(BaseModel):
             nn.Linear(conv_out_size, 256),
             nn.ReLU(),
             nn.Linear(256, 128),
-            nn.ReLU()
+            nn.ReLU(),
+            nn.Linear(128, n_actions)
         )
-        self.out = nn.Linear(128, n_actions)
 
     def get_conv_size(self, input_shape: tuple[int, ...]) -> int:
         """Returns the convolutional layers output size."""
@@ -46,5 +46,4 @@ class CNNModel(BaseModel):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Propagates the features forward through the network."""
         conv_out = self.conv(x).view(x.size(0), -1)  # 13x13x64 -> 10,816
-        fc_out = self.fc(conv_out)
-        return self.out(fc_out)
+        return self.fc(conv_out)

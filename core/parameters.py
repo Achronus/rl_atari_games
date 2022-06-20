@@ -2,9 +2,8 @@ from dataclasses import dataclass
 
 from models._base import BaseModel
 
-import torch
 import torch.optim as optim
-import torch.nn as nn
+import torch.nn.modules as modules
 
 
 @dataclass
@@ -23,7 +22,7 @@ class ModelParameters:
     """A data class for model (neural network) parameters."""
     network: BaseModel
     optimizer: optim.Optimizer
-    loss_metric: nn.modules.loss = nn.MSELoss()
+    loss_metric: modules.loss
 
 
 class AgentParameters:
@@ -32,37 +31,17 @@ class AgentParameters:
 
 
 @dataclass
-class CoreDQNParameters(AgentParameters):
-    """A data class containing the core DQN parameters."""
+class DQNParameters(AgentParameters):
+    """A data class for DQN parameters."""
     gamma: float  # Discount factor
     tau: float  # Soft updater for target network
-    buffer_size: int  # Size of memory buffer
-    batch_size: int  # Buffer mini-batch size
+    buffer_size: int  # Replay buffer size
+    batch_size: int  # Buffer training batch size
     update_steps: int  # How often to update the network
-    max_timesteps: int = 1000  # Max before episode end
-
-
-@dataclass
-class DQNParameters(CoreDQNParameters):
-    """A data class for DQN parameters."""
     eps_start: float = 1.0  # Initial epsilon
     eps_end: float = 0.01  # Greedy epsilon threshold
     eps_decay: float = 0.995  # Epsilon decay rate
-
-
-@dataclass
-class RainbowDQNParameters(CoreDQNParameters):
-    """A data class for Rainbow DQN parameters."""
-    replay_period: int = 100  # Number of transitions before learning begins
-    n_steps: int = 3  # Number of steps for multi-step learning
-    learn_frequency: int = 4  # Number of timesteps to perform agent learning
-    clip_grad: float = 0.5  # Maximum value for gradient clipping
-    reward_clip: float = 0.1  # Number for maximum reward bounds
-
-    # Categorical DQN
-    n_atoms: int = 51  # Number of atoms
-    v_min: int = -10  # Minimum size of the atoms
-    v_max: int = 10  # Maximum size of the atoms
+    max_timesteps: int = 1000  # Max before episode end
 
 
 @dataclass
@@ -70,31 +49,10 @@ class PPOParameters(AgentParameters):
     """A data class for PPO parameters."""
     gamma: float  # Discount factor
     update_steps: int  # How often to update the network
-    loss_clip: float  # Value for surrogate clipping
+    clip_grad: float  # Gradient clipping
     rollout_size: int  # Number of samples to train on
     num_agents: int = 4  # Number of agents used during training
     num_mini_batches: int = 4  # Number of mini-batches during training
     entropy_coef: float = 0.01  # Coefficient for regularisation
     value_loss_coef: float = 0.5  # Coefficient for decreasing value loss
-    clip_grad: float = 0.5  # Maximum value for gradient clipping
-
-
-@dataclass
-class BufferParameters:
-    """A data class containing the parameters for Prioritized Experience Replay Buffers."""
-    buffer_size: int  # Size of memory buffer
-    batch_size: int  # Buffer mini-batch size
-    priority_exponent: float  # Prioritized buffer exponent (alpha)
-    priority_weight: float  # Initial prioritized buffer importance sampling weight (beta)
-    n_steps: int  # Number of steps for multi-step learning
-    input_shape: tuple  # State image input shape, obtained from the environment
-
-
-@dataclass
-class Experience:
-    """A data class to store transitions (experiences)."""
-    state: torch.Tensor
-    action: int
-    reward: float
-    done: bool
-    next_state: torch.Tensor = torch.zeros((1, 1))
+    max_grad_norm: float = 0.5  # Maximum value for gradient clipping

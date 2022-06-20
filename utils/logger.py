@@ -41,11 +41,3 @@ class PPOLogger(Logger):
                      'ratios', 'log_ratios', 'policy_losses', 'value_losses',
                      'entropy_losses', 'total_losses', 'approx_kl']
         super().__init__(self.keys)
-
-
-class RDQNLogger(Logger):
-    """A Rainbow DQN logger that stores information for each episode iteration."""
-    def __init__(self) -> None:
-        self.keys = ['returns', 'actions', 'train_losses', 'double_q_values',
-                     'double_q_probs', 'env_info', 'ep_scores']
-        super().__init__(self.keys)

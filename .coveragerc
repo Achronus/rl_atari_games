@@ -1,2 +1,2 @@
 [run]
-omit = *tests*, *__init__*, core/exceptions.py
+omit = *tests*, *__init__*

@@ -13,8 +13,6 @@ class BaseModel(nn.Module):
     """
     def __init__(self, input_shape: tuple[int, ...], n_actions: int) -> None:
         super().__init__()
-        self.input_shape = input_shape
-        self.n_actions = n_actions
 
         self.fc = nn.Sequential(
             nn.Linear(input_shape[0], 128),
