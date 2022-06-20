@@ -105,7 +105,7 @@ This project requires a Python 3.10 environment, which can be created with the f
 The repository versions are stored within separate branches. From newest to oldest:
 
 - Main (stable - v3)
-- Curiosity (v4 - _in development!_)
+- Curiosity (v4 - Curiosity IM + previous _in development!_)
 - RQDN (v3 - RDQN and PPO)
 - PPO  (v2 - DQN and PPO)
 - DQN  (v1 - Only DQN)
