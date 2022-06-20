@@ -16,14 +16,6 @@ class ActorCritic(CNNModel):
     def __init__(self, input_shape: tuple[int, ...], n_actions: int) -> None:
         super().__init__(input_shape, n_actions)
 
-        conv_out_size = self.get_conv_size(input_shape)
-
-        self.fc = nn.Sequential(
-            nn.Linear(conv_out_size, 256),
-            nn.ReLU(),
-            nn.Linear(256, 128),
-            nn.ReLU()
-        )
         self.actor = nn.Linear(128, n_actions)
         self.critic = nn.Linear(128, 1)
 

@@ -28,20 +28,13 @@ def model_params(env_details: EnvDetails) -> ModelParameters:
 
 @pytest.fixture
 def ppo_params() -> PPOParameters:
-    return PPOParameters(gamma=0.99, update_steps=4, clip_grad=0.1, rollout_size=1, num_agents=4)
+    return PPOParameters(gamma=0.99, update_steps=1, loss_clip=0.1, rollout_size=1,
+                         num_agents=2, num_mini_batches=1)
 
 
 @pytest.fixture
 def ppo(env_details, model_params, ppo_params) -> PPO:
     return PPO(env_details, model_params, ppo_params, seed=1)
-
-
-def test_ppo_act_invalid(ppo, env_details) -> None:
-    try:
-        preds = ppo.act(torch.randn(env_details.n_actions,))
-        assert False
-    except (ValueError, RuntimeError):
-        assert True
 
 
 def test_ppo_act_valid(ppo) -> None:
@@ -121,7 +114,7 @@ def test_ppo_train_invalid(ppo) -> None:
 
 def test_ppo_train_valid(ppo) -> None:
     try:
-        ppo.train(num_episodes=4)
+        ppo.train(num_episodes=2)
         assert True
     except (ValueError, RuntimeError):
         assert False
