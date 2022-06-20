@@ -7,6 +7,8 @@ from core.parameters import BufferParameters, Experience
 import numpy as np
 import torch
 
+DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward', 'next_state', 'done'])
+
 
 class ReplayBuffer:
     """
@@ -28,7 +30,7 @@ class ReplayBuffer:
 
         self.memory = deque(maxlen=self.buffer_size)
 
-    def add(self, experience: Experience) -> None:
+    def add(self, experience: DQNExperience) -> None:
         """Add a tuple of experience to the buffer memory."""
         self.memory.append(experience)
 
@@ -80,6 +82,7 @@ class SumTree:
     """
     def __init__(self, capacity: int, device: str, n_steps: int, input_shape: tuple) -> None:
         self.position = 0  # Pointer
+        self.data_count = 0  # Track data entries (not placeholders)
         self.capacity = capacity
         self.n_steps = n_steps
 
@@ -110,6 +113,10 @@ class SumTree:
         # Update pointer and maximum priority
         self.position = (self.position + 1) % self.capacity
         self.max_priority = max(priority, self.max_priority)
+
+        # Increment data count
+        if self.data_count != self.capacity:
+            self.data_count += 1
 
     def __update_node(self, idx: int, priority: int) -> None:
         """Adds priority value to respective node in the tree."""
@@ -222,7 +229,7 @@ class SumTree:
 
     def __len__(self) -> int:
         """Returns the current amount of data in memory."""
-        return np.count_nonzero(self.data)
+        return self.data_count
 
 
 class PrioritizedReplayBuffer:

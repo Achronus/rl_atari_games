@@ -1,3 +1,4 @@
+from collections import namedtuple
 import numpy as np
 import random
 from datetime import datetime
@@ -11,6 +12,8 @@ from utils.logger import DQNLogger, RDQNLogger
 
 import torch
 from torch.nn.utils import clip_grad_norm_
+
+DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward', 'next_state', 'done'])
 
 
 class DQN(Agent):
@@ -40,7 +43,7 @@ class DQN(Agent):
 
         self.timestep = 0
 
-    def step(self, experience: Experience) -> None:
+    def step(self, experience: DQNExperience) -> None:
         """Perform a learning step, if there are enough samples in memory."""
         # Store experience in memory
         self.memory.add(experience)
@@ -146,7 +149,7 @@ class DQN(Agent):
                 next_state, reward, done, info = self.env.step(action)  # Take an action
 
                 # Perform learning
-                self.step(Experience(state.cpu(), action, reward, done, normalize(next_state)))
+                self.step(DQNExperience(state.cpu(), action, reward, normalize(next_state), done))
 
                 # Update state and score
                 state = next_state
@@ -245,8 +248,8 @@ class RainbowDQN(Agent):
 
         # Compute Double-Q probabilities and values
         with torch.no_grad():
-            double_q_probs = self.__compute_double_q_probs(samples['next_states'].to(self.device))
-            double_q = self.__compute_double_q(samples, returns, double_q_probs)
+            double_q_probs = self.compute_double_q_probs(samples['next_states'].to(self.device))
+            double_q = self.compute_double_q(samples, returns, double_q_probs)
 
         # Compute importance-sampling weights and log action probabilities
         weights = self.buffer.importance_sampling(samples['priorities'])  # shape -> [batch_size]
@@ -273,7 +276,7 @@ class RainbowDQN(Agent):
         # Update buffer priorities
         self.buffer.update_priorities(samples['priority_indices'], loss.detach())
 
-    def __compute_double_q_probs(self, next_states: torch.Tensor) -> torch.Tensor:
+    def compute_double_q_probs(self, next_states: torch.Tensor) -> torch.Tensor:
         """Computes the Double-Q probabilities for the best actions obtained from the local network."""
         # Compute N-step next state probabilities
         probs = self.local_network.forward(next_states)  # Local net: next action probabilities
@@ -286,7 +289,7 @@ class RainbowDQN(Agent):
         # Calculate Double-Q probabilities for best actions, shape -> [batch_size, n_atoms]
         return target_probs[range(self.params.batch_size), best_actions_indices].cpu()
 
-    def __compute_double_q(self, samples: dict, returns: torch.Tensor, double_q_probs: torch.Tensor) -> torch.Tensor:
+    def compute_double_q(self, samples: dict, returns: torch.Tensor, double_q_probs: torch.Tensor) -> torch.Tensor:
         """Performs the categorical DQN operations to compute Double-Q values."""
         # Compute Tz (Bellman operator T applied to z) - Categorical DQN
         support = self.z_support.unsqueeze(0).cpu()

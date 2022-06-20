@@ -5,6 +5,8 @@ import pytest
 
 from models.actor_critic import ActorCritic
 from models.cnn import CNNModel
+from models.dueling import CategoricalNoisyDueling
+from models.linear import NoisyLinear
 from utils.model_utils import load_model
 
 import torch
@@ -95,3 +97,19 @@ def test_actor_critic_model_output_valid(n_actions, input_shape) -> None:
     svs_valid = state_values.shape == torch.zeros((batch_size, 1)).shape
     assert all([ap_valid, svs_valid])
 
+
+def test_noisy_linear_forward_valid() -> None:
+    torch_in = torch.rand((128,))
+    noisy_layer = NoisyLinear(128, 9)
+    output = noisy_layer.forward(torch_in)
+    assert all([output.shape, torch.ones(128, 9).shape])
+
+
+def test_noisy_dueling_network_valid(n_actions, input_shape) -> None:
+    batch_size = 10
+    n_atoms = 5
+    dueling = CategoricalNoisyDueling(input_shape=input_shape, n_actions=n_actions,
+                                      n_atoms=n_atoms)
+
+    q_values = dueling.forward(torch.rand((batch_size,) + input_shape))
+    assert all([q_values.shape, torch.rand((batch_size, n_actions, n_atoms)).shape])
