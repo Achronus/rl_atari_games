@@ -1,0 +1,56 @@
+---
+environment:
+  env_name: "ALE/SpaceInvaders-v5"
+  img_size: 128 # Width and height
+  stack_size: 4 # Number of image frames to stack together
+  capture_video: False # Video recording
+  record_every: 1000 # Number of episodes between each video recording
+  seed: 368 # Random seed for reproducing results
+other_environments:
+  env_2: "ALE/Qbert-v5"
+  env_3: "ALE/MontezumaRevenge-v5"
+
+---
+core:
+  utility:
+    num_episodes: 100000 # Number of episodes to train the model
+    save_every: 1000 # Every number of episodes to save the model
+  agent:
+    gamma: 0.99 # Discount factor
+    update_steps: 4 # How often to update the network
+    clip_grad: 0.5 # Maximum value for gradient clipping
+  optimizer:
+    lr: 0.001 # learning rate
+    eps: 0.001 # epsilon
+
+---
+dqn:
+  core:
+    tau: 0.001 # Soft updater for target network
+    max_timesteps: 1000 # Maximum steps before each episode ends
+  vanilla:
+    eps_start: 1.0 # Initial epsilon
+    eps_end: 0.01 # Greedy epsilon threshold
+    eps_decay: 0.995 # Epsilon decay rate
+  rainbow:
+    n_steps: 3 # Number of steps for multi-step learning
+    replay_period: 100 # Number of transitions before learning begins
+    learn_frequency: 4 # Number of timesteps to perform agent learning
+    reward_clip: 0.1 # Number for maximum reward bounds
+    n_atoms: 51 # Number of atoms (distributions)
+    v_min: -10 # Minimum size of the atoms
+    v_max: 10 # Maximum size of the atoms
+  buffer:
+    priority_exponent: 0.5 # Prioritized buffer exponent (alpha)
+    priority_weight: 0.4 # Initial prioritized buffer importance sampling weight (beta)
+    buffer_size: 1000 # Replay buffer size
+    batch_size: 32 # Buffer mini-batch size
+
+---
+ppo:
+  loss_clip: 0.1 # Value for surrogate clipping
+  rollout_size: 100 # Number of samples to train on
+  num_agents: 8 # Number of agents used during training
+  num_mini_batches: 4 # Number of mini-batches during training
+  entropy_coef: 0.01 # Coefficient for regularisation (lambda)
+  value_loss_coef: 0.5 # Coefficient for decreasing value loss

@@ -6,7 +6,7 @@ import math
 import numpy as np
 import os
 from datetime import datetime, timedelta
-from typing import Union
+from typing import Union, Any
 
 import torch
 
@@ -82,3 +82,13 @@ def timer_string(time_elapsed: timedelta, message: str = '') -> str:
     time_string += f'{secs:.2f} secs'
 
     return f'{message} {time_string}.'
+
+
+def dict_search(data_dict: dict) -> tuple[str, Any]:
+    """Iterates over a dictionary recursively. Returns each key-value pair."""
+    for key, value in data_dict.items():
+        if isinstance(value, dict):
+            for item in dict_search(value):
+                yield item
+        else:
+            yield key, value

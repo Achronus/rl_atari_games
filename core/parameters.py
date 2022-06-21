@@ -36,8 +36,6 @@ class CoreDQNParameters(AgentParameters):
     """A data class containing the core DQN parameters."""
     gamma: float  # Discount factor
     tau: float  # Soft updater for target network
-    buffer_size: int  # Size of memory buffer
-    batch_size: int  # Buffer mini-batch size
     update_steps: int  # How often to update the network
     max_timesteps: int = 1000  # Max before episode end
 
@@ -45,6 +43,8 @@ class CoreDQNParameters(AgentParameters):
 @dataclass
 class DQNParameters(CoreDQNParameters):
     """A data class for DQN parameters."""
+    buffer_size: int = 10  # Size of memory buffer
+    batch_size: int = 1  # Buffer mini-batch size
     eps_start: float = 1.0  # Initial epsilon
     eps_end: float = 0.01  # Greedy epsilon threshold
     eps_decay: float = 0.995  # Epsilon decay rate
@@ -86,7 +86,6 @@ class BufferParameters:
     batch_size: int  # Buffer mini-batch size
     priority_exponent: float  # Prioritized buffer exponent (alpha)
     priority_weight: float  # Initial prioritized buffer importance sampling weight (beta)
-    n_steps: int  # Number of steps for multi-step learning
     input_shape: tuple  # State image input shape, obtained from the environment
 
 

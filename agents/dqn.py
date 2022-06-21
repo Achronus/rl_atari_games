@@ -214,8 +214,8 @@ class RainbowDQN(Agent):
         self.batch_size = buffer_params.batch_size
         self.buffer_params = buffer_params
 
-        self.buffer = PrioritizedReplayBuffer(buffer_params, env_details.stack_size, self.device,
-                                              self.logger)
+        self.buffer = PrioritizedReplayBuffer(buffer_params, params.n_steps, env_details.stack_size,
+                                              self.device, self.logger)
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)
 
@@ -287,7 +287,7 @@ class RainbowDQN(Agent):
         target_probs = self.target_network.forward(next_states)  # Target net: next action probabilities
 
         # Calculate Double-Q probabilities for best actions, shape -> [batch_size, n_atoms]
-        return target_probs[range(self.params.batch_size), best_actions_indices].cpu()
+        return target_probs[range(self.batch_size), best_actions_indices].cpu()
 
     def compute_double_q(self, samples: dict, returns: torch.Tensor, double_q_probs: torch.Tensor) -> torch.Tensor:
         """Performs the categorical DQN operations to compute Double-Q values."""

@@ -240,14 +240,15 @@ class PrioritizedReplayBuffer:
     Parameters:
         params (BufferParameters) - a class containing parameters for the buffer
         device (str) - CUDA device name for data calculations (GPU or CPU)
+        n_steps (int) - Number of steps for multi-step learning
         stack_size (int) - number of state frames to stack together
     """
-    def __init__(self, params: BufferParameters, stack_size: int, device: str, logger) -> None:
+    def __init__(self, params: BufferParameters, n_steps: int, stack_size: int, device: str, logger) -> None:
         self.params = params
         self.capacity = params.buffer_size
         self.batch_size = params.batch_size
         self.device = device
-        self.n_steps = params.n_steps
+        self.n_steps = n_steps
         self.history_length = stack_size
 
         self.logger = logger
@@ -255,7 +256,7 @@ class PrioritizedReplayBuffer:
         self.priority_weight = params.priority_weight
         self.priority_exponent = params.priority_exponent
 
-        self.memory = SumTree(self.capacity, device, params.n_steps, self.params.input_shape)
+        self.memory = SumTree(self.capacity, device, n_steps, self.params.input_shape)
 
     def add(self, experience: Experience) -> None:
         """Add a single experience to the buffer memory with maximum priority."""

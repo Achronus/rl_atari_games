@@ -67,12 +67,11 @@ def dqn(env_details, model_params, dqn_params) -> DQN:
 
 @pytest.fixture
 def rdqn(env_details) -> RainbowDQN:
-    params = RainbowDQNParameters(gamma=0.99, tau=1e3, buffer_size=10, batch_size=1,
-        update_steps=3, max_timesteps=100, n_atoms=10, v_min=-10, v_max=10,
-        replay_period=10, n_steps=3, learn_frequency=3, clip_grad=0.5, reward_clip=0.1)
+    params = RainbowDQNParameters(gamma=0.99, tau=1e3, update_steps=3, max_timesteps=100,
+        n_atoms=10, v_min=-10, v_max=10, replay_period=10, n_steps=3, learn_frequency=3,
+        clip_grad=0.5, reward_clip=0.1)
     buffer_params = BufferParameters(buffer_size=10, batch_size=1, priority_exponent=0.5,
-        priority_weight=0.4, n_steps=3, input_shape=env_details.input_shape
-    )
+        priority_weight=0.4, input_shape=env_details.input_shape)
     network = CategoricalNoisyDueling(input_shape=env_details.input_shape,
                                       n_actions=env_details.n_actions,
                                       n_atoms=10)

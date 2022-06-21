@@ -26,8 +26,9 @@ def sum_tree() -> SumTree:
 
 @pytest.fixture
 def priority_buffer() -> PrioritizedReplayBuffer:
-    params = BufferParameters(10, 1, 0.1, 0.5, 3, (10, 10))
-    return PrioritizedReplayBuffer(params, 4, 'cpu', RDQNLogger())
+    params = BufferParameters(buffer_size=10, batch_size=1, priority_exponent=0.1,
+                              priority_weight=0.5, input_shape=(10, 10))
+    return PrioritizedReplayBuffer(params, 3, 4, 'cpu', RDQNLogger())
 
 
 def test_replay_buffer_add_valid(experience) -> None:

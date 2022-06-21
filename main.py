@@ -1,15 +1,13 @@
-import os
-from dotenv import load_dotenv
-
-from core.create import create_model, set_save_every
+from core.create import create_model, get_utility_params
 
 import torch
 
-load_dotenv()  # Create access to .env file
+# Get utility parameters from yaml file
+util_params = get_utility_params()
 
-NUM_EPISODES = int(os.getenv('NUM_EPISODES'))
-PPO_NUM_EPISODES = int(os.getenv('ROLLOUT_SIZE')) * int(os.getenv('NUM_AGENTS')) * NUM_EPISODES
-SAVE_EVERY = set_save_every(1000)
+# Set them as hyperparameters
+NUM_EPISODES = util_params['num_episodes']
+SAVE_EVERY = util_params['save_every']
 
 
 def main():
@@ -21,7 +19,9 @@ def main():
     # Train models
     dqn.train(num_episodes=NUM_EPISODES, print_every=100, save_count=SAVE_EVERY)
     torch.cuda.empty_cache()  # Reset cache before training next algorithm
-    ppo.train(num_episodes=PPO_NUM_EPISODES, print_every=100, save_count=SAVE_EVERY)
+
+    ppo_num_episodes = ppo.params.rollout_size * ppo.params.num_agents * NUM_EPISODES
+    ppo.train(num_episodes=ppo_num_episodes, print_every=100, save_count=SAVE_EVERY)
 
 
 if __name__ == '__main__':
