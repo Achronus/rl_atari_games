@@ -21,12 +21,17 @@ The file structure for the artefact is outlined below.
 |   +-- ppo.py
 +-- core
 |   +-- buffer.py
+|   +-- create.py
 |   +-- env_details.py
+|   +-- exceptions.py
 |   +-- parameters.py
+|   +-- template.yaml
 +-- models
 |   +-- _base.py
 |   +-- actor_critic.py
 |   +-- cnn.py
+|   +-- dueling.py
+|   +-- linear.py
 +-- tests
 |   +-- test_buffer.py
 |   +-- test_dqn.py
@@ -43,10 +48,10 @@ The file structure for the artefact is outlined below.
 |   +-- render.py
 +-- .coverage
 +-- .coveragerc
-+-- .env
 +-- LICENSE
-+-- main.py
 +-- README.md
++-- main.py
++-- parameters.yaml
 +-- requirements.txt
 +-- rl_with_atari.ipynb
 ```
@@ -99,15 +104,3 @@ This project requires a Python 3.10 environment, which can be created with the f
 4. Run the `jupyter-lab` command to start JupyterLab and access the Jupyter Notebook named `rl_with_atari.ipynb`, or run the `main.py` file.
 
     _(Note)_ running the `main.py` file will train the models. It is advised to examine this file before running it.
-
-## Versions
-
-The repository versions are stored within separate branches. From newest to oldest:
-
-- Main (stable - v3)
-- Curiosity (v4 - Curiosity IM + previous - _in development!_)
-- RQDN (v3 - RDQN and PPO)
-- PPO  (v2 - DQN and PPO)
-- DQN  (v1 - Only DQN)
-
-_(Note)_ newer versions may contain refactors that are not in older branches.
