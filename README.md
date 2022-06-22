@@ -104,3 +104,18 @@ This project requires a Python 3.10 environment, which can be created with the f
 4. Run the `jupyter-lab` command to start JupyterLab and access the Jupyter Notebook named `rl_with_atari.ipynb`, or run the `main.py` file.
 
     _(Note)_ running the `main.py` file will train the models. It is advised to examine this file before running it.
+
+
+## References
+
+The algorithms created in this repository have been inspired and adapted from the following developers:
+
+Rainbow DQN -
+- [Curt Park: Rainbow is all you need (GitHub)](https://github.com/Curt-Park/rainbow-is-all-you-need)
+- [Kaixhin: Rainbow (GitHub)](https://github.com/Kaixhin/Rainbow/tree/1745b184c3dfc03d4ffa3ce2342ced9996b39a60)
+
+PPO - 
+- [ericyangyu: PPO for beginners (GitHub)](https://github.com/ericyangyu/PPO-for-Beginners)
+- [vwxyzjn: PPO implementation details (GitHub)](https://github.com/vwxyzjn/ppo-implementation-details)
+
+A special thanks to each of these developers for creating incredible work in the RL space. Please check out their original work using the links above.
