@@ -48,5 +48,3 @@ def test_check_params_valid(yaml_params) -> None:
         assert True
     except (AssertionError, MissingVariableError):
         assert False
-
-

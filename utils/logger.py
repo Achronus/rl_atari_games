@@ -5,7 +5,7 @@ class Logger:
     Parameters:
         keys (list[str, ...]) - a list of names of information to store
     """
-    def __init__(self, keys: list[str, ...]) -> None:
+    def __init__(self, keys: list[str]) -> None:
         self.keys = keys
         self.__set_defaults()
 

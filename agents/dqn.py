@@ -361,7 +361,6 @@ class RainbowDQN(Agent):
 
                     # Start learning after replay period is reached
                     if timestep >= self.params.replay_period and len(self.buffer) > self.batch_size:
-                        # self.__anneal_weights()
 
                         # Learn every few timesteps
                         if timestep % self.params.learn_frequency == 0:
@@ -398,10 +397,6 @@ class RainbowDQN(Agent):
                                                'buffer_params': self.buffer_params
                                            })
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
-
-    def __anneal_weights(self) -> None:
-        """Anneal importance sampling weight (β) to 1 at the start of learning."""
-        self.buffer.priority_weight = min(self.buffer.priority_weight + self.priority_weight_increase, 1)
 
     def __soft_update_target_network(self) -> None:
         """
