@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, Counter
 import numpy as np
 import random
 from datetime import datetime
@@ -42,6 +42,7 @@ class DQN(Agent):
         self.loss = model_params.loss_metric
 
         self.timestep = 0
+        self.save_batch_time = datetime.now()  # init
 
     def step(self, experience: DQNExperience) -> None:
         """Perform a learning step, if there are enough samples in memory."""
@@ -103,7 +104,7 @@ class DQN(Agent):
                 q_targets_next=q_targets_next,
                 q_targets=q_targets,
                 q_preds=q_preds,
-                train_losses=loss
+                train_losses=loss.item()
         )
 
         # Update target network
@@ -136,49 +137,54 @@ class DQN(Agent):
                                            f'batch size: {self.memory.batch_size}, '
                                            f'max timesteps: {int(timesteps_idx)}{timesteps_letter.lower()}, '
                                            f'num network updates: {self.params.update_steps}.')
-        # Iterate over episodes
-        for i_episode in range(1, num_episodes+1):
-            # Initialize state and score
-            score = 0
-            state = self.env.reset()
 
-            # Iterate over timesteps
-            for t in range(self.params.max_timesteps):
-                state = normalize(to_tensor(state)).to(self.device)
-                action = self.act(state, eps)  # Generate an action
-                next_state, reward, done, info = self.env.step(action)  # Take an action
+        # Time training
+        with timer('Total time taken:'):
+            self.save_batch_time = datetime.now()  # print_every start time
+            # Iterate over episodes
+            for i_episode in range(1, num_episodes+1):
+                # Initialize state and score
+                score = 0
+                state = self.env.reset()
+                actions = []
 
-                # Perform learning
-                self.step(DQNExperience(state.cpu(), action, reward, normalize(next_state), done))
+                # Iterate over timesteps
+                for t in range(self.params.max_timesteps):
+                    state = normalize(to_tensor(state)).to(self.device)
+                    action = self.act(state, eps)  # Generate an action
+                    next_state, reward, done, info = self.env.step(action)  # Take an action
 
-                # Update state and score
-                state = next_state
-                score += reward
+                    # Perform learning
+                    self.step(DQNExperience(state.cpu(), action, reward, normalize(next_state), done))
 
-                # Log actions and environment info
-                self.log_data(actions=action, env_info=info)
+                    # Update state and score
+                    state = next_state
+                    score += reward
 
-                # Check if finished
-                if done:
-                    break
+                    # Check if finished
+                    if done:
+                        break
 
-            # Log metrics
-            self.log_data(ep_scores=score, epsilons=eps)
+                    # Add action to list
+                    actions.append(action)
 
-            # Decrease epsilon
-            eps = max(self.params.eps_end, self.params.eps_decay * eps)
+                # Log metrics
+                self.log_data(ep_scores=score, actions=Counter(actions))
 
-            # Display output and save model
-            self.__output_progress(num_episodes, i_episode, print_every)
-            self._save_model_condition(i_episode, save_count,
-                                       filename=f'dqn_batch{self.memory.batch_size}',
-                                       extra_data={
-                                           'local_network': self.local_network.state_dict(),
-                                           'target_network': self.target_network.state_dict(),
-                                           'optimizer': self.optimizer,
-                                           'loss_metric': self.loss
-                                       })
-        print(f"Training complete. Access metrics from 'logger' attribute.")
+                # Decrease epsilon
+                eps = max(self.params.eps_end, self.params.eps_decay * eps)
+
+                # Display output and save model
+                self.__output_progress(num_episodes, i_episode, print_every)
+                self._save_model_condition(i_episode, save_count,
+                                           filename=f'dqn_batch{self.memory.batch_size}',
+                                           extra_data={
+                                               'local_network': self.local_network.state_dict(),
+                                               'target_network': self.target_network.state_dict(),
+                                               'optimizer': self.optimizer,
+                                               'loss_metric': self.loss
+                                           })
+        print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
         """Provides a progress update on the model's training to the console."""
@@ -238,8 +244,9 @@ class RainbowDQN(Agent):
             action = torch.argmax(action_probs).item()
         return action
 
-    def learn(self) -> None:
-        """Perform agent learning by updating the network parameters."""
+    def learn(self) -> tuple:
+        """Perform agent learning by updating the network parameters.
+        Returns the steps average return and training loss."""
         # Get samples from buffer
         samples = self.buffer.sample()
 
@@ -264,17 +271,15 @@ class RainbowDQN(Agent):
         clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
         self.optimizer.step()
 
-        # Log details
+        # Log actions
         self.log_data(
-            returns=returns.cpu(),
-            actions=samples['actions'].detach().cpu(),
-            double_q_values=double_q.cpu(),
-            double_q_probs=double_q_probs.cpu(),
-            train_losses=loss.item()
+            actions=Counter(samples['actions'].detach().cpu().tolist())
         )
 
         # Update buffer priorities
         self.buffer.update_priorities(samples['priority_indices'], loss.detach())
+        avg_return = returns.mean().item()
+        return avg_return, loss.item()
 
     def compute_double_q_probs(self, next_states: torch.Tensor) -> torch.Tensor:
         """Computes the Double-Q probabilities for the best actions obtained from the local network."""
@@ -345,7 +350,7 @@ class RainbowDQN(Agent):
                 self.priority_weight_increase = min(i_episode / num_episodes, 1)
                 state = self.env.reset()  # Initialize state
                 score = 0.
-                env_info = []
+                avg_returns, train_losses = [], []
 
                 # Iterate over timesteps
                 for timestep in range(self.params.max_timesteps):
@@ -364,7 +369,11 @@ class RainbowDQN(Agent):
 
                         # Learn every few timesteps
                         if timestep % self.params.learn_frequency == 0:
-                            self.learn()
+                            avg_return, train_loss = self.learn()
+
+                            # Add items to lists
+                            avg_returns.append(avg_return)
+                            train_losses.append(train_loss)
 
                     # Update target network every few timesteps
                     if timestep % self.params.update_steps == 0:
@@ -376,14 +385,17 @@ class RainbowDQN(Agent):
 
                     # Update state
                     state = next_state
-                    env_info.append(info)  # add info to list
 
                     # Check if finished
                     if done:
                         break
 
-                # Add items to logger
-                self.log_data(ep_scores=score, env_info=env_info)
+                # Add episode data to logger
+                self.log_data(
+                    ep_scores=score,
+                    avg_returns=self._calc_mean(avg_returns),
+                    train_losses=self._calc_mean(train_losses)
+                )
 
                 # Display output and save model
                 self.__output_progress(num_episodes, i_episode, print_every)

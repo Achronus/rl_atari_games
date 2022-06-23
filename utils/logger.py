@@ -15,7 +15,13 @@ class Logger:
             if key not in self.keys:
                 raise ValueError(f"Key does not exist! Must be one of: '{self.keys}'")
 
-            getattr(self, key).append(val)
+            # If actions, update counter values
+            if key == 'actions' and len(getattr(self, key)) != 0:
+                actions = getattr(self, key)
+                actions[0] += val
+            # Otherwise, add to list as normal
+            else:
+                getattr(self, key).append(val)
 
     def __set_defaults(self) -> None:
         """Creates empty list values for all keys."""
@@ -29,23 +35,22 @@ class Logger:
 class DQNLogger(Logger):
     """A DQN logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['actions', 'env_info', 'train_losses', 'ep_scores', 'epsilons',
-                     'q_targets_next', 'q_targets', 'q_preds']
+        self.keys = ['actions', 'train_losses', 'ep_scores', 'q_targets_next',
+                     'q_targets', 'q_preds']
         super().__init__(self.keys)
 
 
 class PPOLogger(Logger):
     """A PPO logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['predictions', 'env_info', 'rewards', 'advantages', 'returns',
-                     'ratios', 'log_ratios', 'policy_losses', 'value_losses',
-                     'entropy_losses', 'total_losses', 'approx_kl']
+        self.keys = ['actions', 'avg_rewards', 'avg_returns', 'policy_losses',
+                     'value_losses', 'entropy_losses', 'total_losses',
+                     'approx_kl']
         super().__init__(self.keys)
 
 
 class RDQNLogger(Logger):
     """A Rainbow DQN logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['returns', 'actions', 'train_losses', 'double_q_values',
-                     'double_q_probs', 'env_info', 'ep_scores']
+        self.keys = ['avg_returns', 'actions', 'train_losses', 'ep_scores']
         super().__init__(self.keys)

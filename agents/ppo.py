@@ -1,6 +1,7 @@
 import time
 import numpy as np
 from datetime import datetime
+from collections import Counter
 
 from agents._agent import Agent
 from core.buffer import RolloutBuffer
@@ -99,7 +100,7 @@ class PPO(Agent):
         """Generates a set of rollouts and stores them in the buffer."""
         # Initialize values for each episode
         state = self.envs.reset()
-        env_info, rewards = [], []
+        rewards = []
 
         # Iterate over rollout size
         for i_rollout in range(self.params.rollout_size):
@@ -126,14 +127,13 @@ class PPO(Agent):
 
             # Add data to list
             rewards.append(reward)
-            env_info.append(info)
 
         # Log info
-        self.log_data(env_info=env_info, rewards=rewards)
+        self.log_data(avg_rewards=self._calc_mean(rewards))
 
     def learn(self) -> None:
         """Performs agent learning."""
-        kls, predictions, log_ratios, ratios = [], [], [], []
+        kls, actions = [], []
         policy_losses, value_losses, entropy_losses, total_losses = [], [], [], []
 
         # Calculate advantages
@@ -181,19 +181,22 @@ class PPO(Agent):
 
                 # Add metrics to lists
                 kls.append(approx_kl.item())
-                predictions.append(y_preds)
-                log_ratios.append(log_ratio.detach())
-                ratios.append(ratio.detach())
-                policy_losses.append(policy_loss.detach())
-                value_losses.append(value_loss.detach())
-                entropy_losses.append(entropy_loss.detach())
-                total_losses.append(loss.detach())
+                actions.append(Counter(y_preds['action'].to(torch.int32).tolist()))
+                policy_losses.append(policy_loss.detach().item())
+                value_losses.append(value_loss.detach().item())
+                entropy_losses.append(entropy_loss.detach().item())
+                total_losses.append(loss.detach().item())
 
         # Add episodic info to the logger
-        self.log_data(approx_kl=to_tensor(kls), returns=rtgs.detach(), advantages=advantages.detach(),
-                      predictions=predictions, log_ratios=log_ratios, ratios=ratios,
-                      policy_losses=to_tensor(policy_losses), value_losses=to_tensor(value_losses),
-                      entropy_losses=to_tensor(entropy_losses), total_losses=to_tensor(total_losses))
+        self.log_data(
+            approx_kl=self._calc_mean(kls),
+            policy_losses=self._calc_mean(policy_losses),
+            value_losses=self._calc_mean(value_losses),
+            entropy_losses=self._calc_mean(entropy_losses),
+            total_losses=self._calc_mean(total_losses),
+            avg_returns=self._calc_mean(rtgs),
+            actions=self._count_actions(actions)
+        )
 
     def clipped_value_loss(self, new_state_value: torch.Tensor, batch_returns: torch.Tensor,
                            batch_state_values: torch.Tensor) -> torch.Tensor:
@@ -266,26 +269,17 @@ class PPO(Agent):
         if first_episode or last_episode or i_episode % print_every == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)  # 1000 -> 1K
             ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
-            ep, data = i_episode-1, self.logger
             time_taken = (datetime.now() - self.save_batch_time)
 
             print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
-            print(f'Episodic Return: {self.__mean_val(data.returns, ep)},  '
-                  f'Approx KL: {self.__mean_val(data.approx_kl, ep)},  '
-                  f'Total Loss: {self.__mean_val(data.total_losses, ep)},  '
-                  f'Policy Loss: {self.__mean_val(data.policy_losses, ep)},  '
-                  f'Value Loss: {self.__mean_val(data.value_losses, ep)},  '
-                  f'Entropy Loss: {self.__mean_val(data.entropy_losses, ep)},  ', end='')
+            print(f'Episodic Return: {self.logger.avg_returns[i_episode-1]:.5f},  '
+                  f'Approx KL: {self.logger.approx_kl[i_episode-1]:.5f},  '
+                  f'Total Loss: {self.logger.total_losses[i_episode-1]:.5f},  '
+                  f'Policy Loss: {self.logger.policy_losses[i_episode-1]:.5f},  '
+                  f'Value Loss: {self.logger.value_losses[i_episode-1]:.5f},  '
+                  f'Entropy Loss: {self.logger.entropy_losses[i_episode-1]:.5f},  ', end='')
             print(timer_string(time_taken, 'Time taken:'))
             self.save_batch_time = datetime.now()  # Reset
-
-    @staticmethod
-    def __mean_val(data: torch.Tensor, i_episode: int) -> str:
-        """
-        Calculates the mean for a given tensor of data at a corresponding episode and
-        returns a string representation to 5 decimal places.
-        """
-        return f'{data[i_episode].mean().item():.5f}'
 
     def add_to_buffer(self, step: int, **kwargs) -> None:
         """Adds data to the buffer."""

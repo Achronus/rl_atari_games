@@ -1,6 +1,10 @@
+import gzip
+import os
+import shutil
+
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
-from utils.helper import set_device, number_to_num_letter, save_model
+from utils.helper import to_tensor, set_device, number_to_num_letter, save_model
 from utils.logger import Logger
 
 
@@ -40,12 +44,42 @@ class Agent:
             param_dict = dict(
                 env_details=self.env_details,
                 params=self.params,
-                logger=self.logger,
                 seed=self.seed
             )
             param_dict.update(extra_data)  # Update with extra info
             save_model(filename, param_dict)  # Save model
             print(f"Saved model at episode {i_episode} as: '{filename}.pt'.")
+
+            self.__save_logger(filename)
+
+    def __save_logger(self, filename: str) -> None:
+        """Stores the agents logger object with its values to a compressed file."""
+        name = f"{filename.split('_')[0]}_logger_data"  # Gets model name from filename
+        storage_in = f"saved_models/{name}.pt"
+        storage_out = f"saved_models/{name}.tar.gz"
+
+        # Store logger to separate file
+        save_model(name, dict(logger=self.logger))
+
+        # Read file by chunks and store piece by piece
+        with open(storage_in, 'rb') as fin, gzip.open(storage_out, "wb") as fout:
+            shutil.copyfileobj(fin, fout)
+
+        os.remove(storage_in)  # Remove uncompressed file
+        print(f"Saved logger data to '{storage_out}'. Total size: {os.stat(storage_out).st_size} bytes")
+
+    @staticmethod
+    def _count_actions(actions: list) -> dict:
+        """Helper function that concatenates a list of Counter objects containing the number of actions
+        taken per episode. Returns a single counter object containing the accumulated values."""
+        for idx in range(1, len(actions)):
+            actions[0] += actions[idx]
+        return actions[0]
+
+    @staticmethod
+    def _calc_mean(data_list: list) -> float:
+        """Helper function for computing the mean of a list of data. Returns the mean value."""
+        return to_tensor(data_list).detach().mean().item()
 
     def log_data(self, **kwargs) -> None:
         """Adds data to the logger."""
