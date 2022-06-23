@@ -34,7 +34,7 @@ class ReplayBuffer:
         """Add a tuple of experience to the buffer memory."""
         self.memory.append(experience)
 
-    def sample(self) -> tuple[torch.Tensor, ...]:
+    def sample(self) -> tuple:
         """Randomly sample a batch of experiences from memory."""
         experiences = random.sample(self.memory, k=self.batch_size)
 
@@ -383,8 +383,7 @@ class RolloutBuffer:
         size (int) - number of items to store in the buffer
     """
 
-    def __init__(self, size: int, num_agents: int, env_input_shape: tuple[int, ...],
-                 action_shape: tuple[int, ...]) -> None:
+    def __init__(self, size: int, num_agents: int, env_input_shape: tuple, action_shape: tuple) -> None:
         self.keys = ['states', 'actions', 'rewards', 'dones', 'log_probs', 'state_values']
         self.size = size
         self.num_agents = num_agents

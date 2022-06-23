@@ -15,7 +15,7 @@ class CNNModel(BaseModel):
         input_shape (tuple[int]) - image input dimensions (including batch size)
         n_actions (int) - number of possible actions in the environment
     """
-    def __init__(self, input_shape: tuple[int, ...], n_actions: int) -> None:
+    def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super().__init__(input_shape, n_actions)
 
         # Convolutional Layers
@@ -38,7 +38,7 @@ class CNNModel(BaseModel):
         )
         self.out = nn.Linear(128, n_actions)
 
-    def get_conv_size(self, input_shape: tuple[int, ...]) -> int:
+    def get_conv_size(self, input_shape: tuple) -> int:
         """Returns the convolutional layers output size."""
         out = self.conv(torch.zeros(1, *input_shape))
         return int(np.prod(out.size()))

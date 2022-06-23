@@ -145,7 +145,7 @@ class CheckParamsValid:
         unique_params = list(set(params))
         self.check_params(unique_params)
 
-    def __get_env_keys(self) -> list[str]:
+    def __get_env_keys(self) -> list:
         """Gets the environment parameters attribute names as a list and updates certain keys.
         Returns the updated list."""
         keys = self.get_attribute_names(EnvParameters)
@@ -154,7 +154,7 @@ class CheckParamsValid:
         updated_keys = [key for key in updated_keys if key not in ['RECORD_EVERY', 'SEED']]  # Remove keys
         return updated_keys
 
-    def __get_buffer_keys(self) -> list[str]:
+    def __get_buffer_keys(self) -> list:
         """Gets the buffer parameters attribute names as a list and updates certain keys.
                 Returns the updated list."""
         keys = self.get_attribute_names(BufferParameters)
@@ -162,7 +162,7 @@ class CheckParamsValid:
         updated_keys = [key for key in keys if key not in ['input_shape']]  # Remove keys
         return updated_keys
 
-    def check_params(self, param_list: list[str]) -> None:
+    def check_params(self, param_list: list) -> None:
         """Checks if the given parameters are set in the yaml file."""
         # Handle missing parameters
         false_bools = [idx for idx, item in enumerate(param_list) if item not in self.available_params]
@@ -172,9 +172,10 @@ class CheckParamsValid:
                                        f"Refer to 'core/template.yaml' for required format.")
 
     @staticmethod
-    def get_attribute_names(cls) -> list[str]:
+    def get_attribute_names(cls) -> list:
         """Gets a list of attribute names for a given class."""
-        return [item for item in vars(cls)['__match_args__']]
+        keys = list(cls.__dict__.keys())
+        return [key for key in keys if "__" not in key]
 
 
 class SetModels:

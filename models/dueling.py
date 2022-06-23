@@ -21,7 +21,7 @@ class CategoricalNoisyDueling(CNNModel):
         n_actions (int) - number of possible actions in the environment
         n_atoms (int) - number of distributions
     """
-    def __init__(self, input_shape: tuple[int, ...], n_actions: int, n_atoms: int) -> None:
+    def __init__(self, input_shape: tuple, n_actions: int, n_atoms: int) -> None:
         super().__init__(input_shape, n_actions)
         self.n_atoms = n_atoms
         conv_out_size = self.get_conv_size(input_shape)

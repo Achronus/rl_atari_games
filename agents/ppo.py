@@ -66,7 +66,7 @@ class PPO(Agent):
             'entropy': dist.entropy().cpu()
         }
 
-    def compute_rtgs_and_advantages(self) -> tuple[torch.Tensor, torch.Tensor]:
+    def compute_rtgs_and_advantages(self) -> tuple:
         """Computes advantages using rewards-to-go (rtgs/returns)."""
         # Get rollouts and initialize rtgs
         samples = self.buffer.sample(['states', 'dones', 'rewards', 'state_values'])

@@ -11,7 +11,7 @@ class BaseModel(nn.Module):
         input_shape (tuple[int]) - image input dimensions (including batch size)
         n_actions (int) - number of possible actions in the environment
     """
-    def __init__(self, input_shape: tuple[int, ...], n_actions: int) -> None:
+    def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super().__init__()
         self.input_shape = input_shape
         self.n_actions = n_actions

@@ -79,7 +79,7 @@ class DQN(Agent):
             return np.argmax(action_values.cpu().numpy()).item()
         return random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences: tuple[torch.Tensor, ...]) -> None:
+    def learn(self, experiences: tuple) -> None:
         """Updates the network parameters."""
         states, actions, rewards, next_states, dones = experiences
 

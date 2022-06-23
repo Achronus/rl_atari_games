@@ -6,7 +6,7 @@ import math
 import numpy as np
 import os
 from datetime import datetime, timedelta
-from typing import Union, Any
+from typing import Union
 
 import torch
 
@@ -35,8 +35,8 @@ def normalize(data: Union[list, np.array, torch.Tensor]) -> Union[np.array, torc
     return (1.0 / 255) * data
 
 
-def number_to_num_letter(num: int) -> tuple[int, str]:
-    """Converts a provided integer into a human-readable format. E.g, 1000 -> 1k."""
+def number_to_num_letter(num: int) -> tuple:
+    """Converts a provided integer into a human-readable format. E.g, 1000 -> 1k. Returns the number and letter."""
     letters = ['', 'K', 'M', 'G', 'T', 'P']
     condition = 0 if num == 0 else math.log10(abs(num)) / 3
     idx = max(0, min(len(letters)-1, int(math.floor(condition))))
@@ -84,7 +84,7 @@ def timer_string(time_elapsed: timedelta, message: str = '') -> str:
     return f'{message} {time_string}.'
 
 
-def dict_search(data_dict: dict) -> tuple[str, Any]:
+def dict_search(data_dict: dict) -> tuple:
     """Iterates over a dictionary recursively. Returns each key-value pair."""
     for key, value in data_dict.items():
         if isinstance(value, dict):

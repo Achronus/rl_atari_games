@@ -10,9 +10,9 @@ import torch.nn as nn
 @dataclass
 class EnvParameters:
     """A data class for environment parameters."""
-    env_name: str
-    img_size: int
-    stack_size: int
+    env_name: str = ""
+    img_size: int = 128
+    stack_size: int = 4
     capture_video: bool = False
     record_every: int = 100
     seed: int = 1
@@ -21,8 +21,8 @@ class EnvParameters:
 @dataclass
 class ModelParameters:
     """A data class for model (neural network) parameters."""
-    network: BaseModel
-    optimizer: optim.Optimizer
+    network: BaseModel = BaseModel
+    optimizer: optim.Optimizer = optim.Optimizer
     loss_metric: nn.modules.loss = nn.MSELoss()
 
 
@@ -34,9 +34,9 @@ class AgentParameters:
 @dataclass
 class CoreDQNParameters(AgentParameters):
     """A data class containing the core DQN parameters."""
-    gamma: float  # Discount factor
-    tau: float  # Soft updater for target network
-    update_steps: int  # How often to update the network
+    gamma: float = 0.99  # Discount factor
+    tau: float = 0.001  # Soft updater for target network
+    update_steps: int = 4  # How often to update the network
     max_timesteps: int = 1000  # Max before episode end
 
 
@@ -68,10 +68,10 @@ class RainbowDQNParameters(CoreDQNParameters):
 @dataclass
 class PPOParameters(AgentParameters):
     """A data class for PPO parameters."""
-    gamma: float  # Discount factor
-    update_steps: int  # How often to update the network
-    loss_clip: float  # Value for surrogate clipping
-    rollout_size: int  # Number of samples to train on
+    gamma: float = 0.99  # Discount factor
+    update_steps: int = 4  # How often to update the network
+    loss_clip: float = 0.5  # Value for surrogate clipping
+    rollout_size: int = 100  # Number of samples to train on
     num_agents: int = 4  # Number of agents used during training
     num_mini_batches: int = 4  # Number of mini-batches during training
     entropy_coef: float = 0.01  # Coefficient for regularisation
@@ -82,11 +82,11 @@ class PPOParameters(AgentParameters):
 @dataclass
 class BufferParameters:
     """A data class containing the parameters for Prioritized Experience Replay Buffers."""
-    buffer_size: int  # Size of memory buffer
-    batch_size: int  # Buffer mini-batch size
-    priority_exponent: float  # Prioritized buffer exponent (alpha)
-    priority_weight: float  # Initial prioritized buffer importance sampling weight (beta)
-    input_shape: tuple  # State image input shape, obtained from the environment
+    buffer_size: int = 100  # Size of memory buffer
+    batch_size: int = 32  # Buffer mini-batch size
+    priority_exponent: float = 0.05  # Prioritized buffer exponent (alpha)
+    priority_weight: float = 0.4  # Initial prioritized buffer importance sampling weight (beta)
+    input_shape: tuple = (128, 128)  # State image input shape, obtained from the environment
 
 
 @dataclass

@@ -4,12 +4,12 @@ from IPython import display
 import gym
 import matplotlib.pyplot as plt
 
-from agents.dqn import DQN
+from agents.dqn import DQN, RainbowDQN
 from agents.ppo import PPO
 from utils.helper import normalize, to_tensor
 
 
-def video_render(env: gym.Env, agent: Union[DQN, PPO], steps: int = 3000) -> None:
+def video_render(env: gym.Env, agent: Union[DQN, PPO, RainbowDQN], steps: int = 3000) -> None:
     """Watch a video representation of an agent in a given environment."""
     state = env.reset()
 
@@ -30,7 +30,7 @@ def video_render(env: gym.Env, agent: Union[DQN, PPO], steps: int = 3000) -> Non
     env.close()
 
 
-def plot_render(env: gym.Env, agent: Union[DQN, PPO], steps: int = 3000) -> None:
+def plot_render(env: gym.Env, agent: Union[DQN, PPO, RainbowDQN], steps: int = 3000) -> None:
     """Watch a plot representation of an agent in a given environment."""
     state = env.reset()
     img = plt.imshow(env.render(mode='rgb_array'))  # only call this once
