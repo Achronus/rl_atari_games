@@ -96,7 +96,7 @@ This project requires a Python 3.10 environment, which can be created with the f
     cd rl_atari_games
     conda install -c conda-forge jupyterlab
     conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
-    pip install gym[atari, accept-rom-license, other]
+    pip install gym[atari,accept-rom-license,other]
     pip install -r requirements.txt
     ```
 
