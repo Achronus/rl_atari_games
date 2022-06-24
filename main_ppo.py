@@ -18,7 +18,7 @@ def main():
 
     # Train model
     ppo_num_episodes = ppo.params.rollout_size * ppo.params.num_agents * NUM_EPISODES
-    ppo.train(num_episodes=ppo_num_episodes, print_every=100, save_count=SAVE_EVERY)
+    ppo.train(num_episodes=ppo_num_episodes, print_every=1000, save_count=SAVE_EVERY)
 
 
 if __name__ == '__main__':

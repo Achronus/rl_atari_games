@@ -272,7 +272,7 @@ class PPO(Agent):
             ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
             time_taken = (datetime.now() - self.save_batch_time)
 
-            print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
+            print(f'({ep_idx:.1f}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
             print(f'Episodic Return: {self.logger.avg_returns[i_episode-1]:.5f},  '
                   f'Approx KL: {self.logger.approx_kl[i_episode-1]:.5f},  '
                   f'Total Loss: {self.logger.total_losses[i_episode-1]:.5f},  '

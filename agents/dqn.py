@@ -196,6 +196,6 @@ class DQN(Agent):
             ep_idx, ep_letter = number_to_num_letter(i_episode)  # 1000 -> 1K
             ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
 
-            print(f'({int(ep_idx)}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
+            print(f'({ep_idx:.1f}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
             print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])}, '
                   f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f}')

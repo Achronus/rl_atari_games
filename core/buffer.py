@@ -213,7 +213,7 @@ class SumTree:
         data_indices = indices % self.capacity
 
         samples = dict(
-            priorities=self.priorities[indices].cpu(),
+            priorities=self.priorities[indices].detach(),
             transition_indices=data_indices,
             priority_indices=indices
         )
@@ -225,7 +225,7 @@ class SumTree:
 
     def total_priority(self) -> float:
         """Returns the total priority (root node value)."""
-        return self.priorities[0].cpu().item()
+        return self.priorities[0].detach().item()
 
     def __len__(self) -> int:
         """Returns the current amount of data in memory."""
