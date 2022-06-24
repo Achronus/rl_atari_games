@@ -19,12 +19,14 @@ The file structure for the artefact is outlined below.
 |   +-- _agent.py
 |   +-- dqn.py
 |   +-- ppo.py
+|   +-- rainbow.py
 +-- core
 |   +-- buffer.py
 |   +-- create.py
 |   +-- env_details.py
 |   +-- exceptions.py
 |   +-- parameters.py
+|   +-- README.md
 |   +-- template.yaml
 +-- models
 |   +-- _base.py
@@ -34,6 +36,7 @@ The file structure for the artefact is outlined below.
 |   +-- linear.py
 +-- tests
 |   +-- test_buffer.py
+|   +-- test_create.py
 |   +-- test_dqn.py
 |   +-- test_env_details.py
 |   +-- test_helper.py
@@ -41,7 +44,9 @@ The file structure for the artefact is outlined below.
 |   +-- test_models.py
 |   +-- test_ppo.py
 +-- utils
+|   +-- dataloader.py
 |   +-- helper.py
+|   +-- init_devices.py
 |   +-- logger.py
 |   +-- model_utils.py
 |   +-- plotter.py
@@ -49,9 +54,9 @@ The file structure for the artefact is outlined below.
 +-- .coverage
 +-- .coveragerc
 +-- LICENSE
-+-- README.md
 +-- main.py
 +-- parameters.yaml
++-- README.md
 +-- requirements.txt
 +-- rl_with_atari.ipynb
 ```
@@ -91,7 +96,7 @@ This project requires a Python 3.10 environment, which can be created with the f
     cd rl_atari_games
     conda install -c conda-forge jupyterlab
     conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
-    pip install gym[atari, accept-rom-license]
+    pip install gym[atari, accept-rom-license, other]
     pip install -r requirements.txt
     ```
 

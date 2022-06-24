@@ -62,12 +62,17 @@ def rainbow_experience() -> Experience:
 
 
 @pytest.fixture
-def dqn(env_details, model_params, dqn_params) -> DQN:
-    return DQN(env_details, model_params, dqn_params, seed=1)
+def device() -> str:
+    return 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 
 @pytest.fixture
-def rdqn(env_details) -> RainbowDQN:
+def dqn(env_details, model_params, dqn_params, device) -> DQN:
+    return DQN(env_details, model_params, dqn_params, seed=1, devices=(device, None))
+
+
+@pytest.fixture
+def rdqn(env_details, device) -> RainbowDQN:
     params = RainbowDQNParameters(gamma=0.99, tau=1e3, update_steps=3, max_timesteps=100,
         n_atoms=10, v_min=-10, v_max=10, replay_period=10, n_steps=3, learn_frequency=3,
         clip_grad=0.5, reward_clip=0.1)
@@ -80,11 +85,11 @@ def rdqn(env_details) -> RainbowDQN:
         network=network,
         optimizer=optim.Adam(network.parameters(), lr=1e3, eps=1e3)
     )
-    return RainbowDQN(env_details, model_params, params, buffer_params, seed=1)
+    return RainbowDQN(env_details, model_params, params, buffer_params, seed=1, devices=(device, None))
 
 
-def test_dqn_creation_invalid(env_details, model_params) -> None:
-    assert DQN(env_details, model_params, DQNParameters(gamma=1), seed=1)
+def test_dqn_creation_invalid(env_details, model_params, device) -> None:
+    assert DQN(env_details, model_params, DQNParameters(gamma=1), seed=1, devices=(device, None))
 
 
 def test_dqn_act_valid(dqn, env_details) -> None:
@@ -152,8 +157,7 @@ def test_dqn_train_valid(dqn) -> None:
         assert False
 
 
-def test_rainbow_act_valid(env_details, rdqn) -> None:
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+def test_rainbow_act_valid(env_details, rdqn, device) -> None:
     action = rdqn.act(torch.randn(env_details.input_shape).unsqueeze(0).to(device))
     assert int(action) in range(env_details.n_actions)
 
@@ -166,8 +170,7 @@ def test_rainbow_learn_valid(rdqn) -> None:
         assert False
 
 
-def test_rainbow_compute_double_probs_valid(env_details, rdqn) -> None:
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+def test_rainbow_compute_double_probs_valid(env_details, rdqn, device) -> None:
     next_state = torch.randn(env_details.input_shape).unsqueeze(0).to(device)
     q_probs = rdqn.compute_double_q_probs(next_state)
     assert q_probs.shape == torch.rand((1, 10)).shape

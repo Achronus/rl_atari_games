@@ -8,17 +8,21 @@ import os
 from datetime import datetime, timedelta
 from typing import Union
 
+from utils.init_devices import CUDADevices
+
 import torch
 
 
-def set_device() -> str:
-    """Gets a string defining CUDA or CPU based on GPU availability."""
-    if torch.cuda.is_available():
-        print(f'CUDA available. Device set to GPU.')
-        return 'cuda:0'
+def set_devices(threshold: float = 2e9) -> tuple:
+    """
+    Gets a string defining CUDA or CPU based on GPU availability.
 
-    print("CUDA unavailable. Device set to CPU.")
-    return 'cpu'
+    Parameters:
+        threshold (float) - an acceptance threshold for devices with higher available memory (default: ~2GB)
+    """
+    devices = CUDADevices(threshold)
+    devices.set_devices()
+    return devices.device, devices.multi_devices
 
 
 def to_tensor(x: Union[list, np.array, torch.Tensor]) -> torch.Tensor:

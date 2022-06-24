@@ -33,13 +33,13 @@ def ppo_params() -> PPOParameters:
 
 
 @pytest.fixture
-def ppo(env_details, model_params, ppo_params) -> PPO:
-    return PPO(env_details, model_params, ppo_params, seed=1)
+def device() -> str:
+    return 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
 
 @pytest.fixture
-def device() -> str:
-    return 'cuda' if torch.cuda.is_available() else 'cpu'
+def ppo(env_details, model_params, ppo_params, device) -> PPO:
+    return PPO(env_details, model_params, ppo_params, seed=1, devices=(device, None))
 
 
 def test_ppo_act_valid(ppo, device) -> None:

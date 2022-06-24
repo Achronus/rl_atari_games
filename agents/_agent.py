@@ -1,11 +1,9 @@
-import gzip
 import os
-import shutil
 import tarfile
 
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
-from utils.helper import to_tensor, set_device, number_to_num_letter, save_model
+from utils.helper import to_tensor, number_to_num_letter, save_model
 from utils.logger import Logger
 
 
@@ -17,8 +15,6 @@ class Agent:
         self.params = params
         self.seed = seed
         self.logger = logger
-
-        self.device: str = set_device()
 
     def _initial_output(self, num_episodes: int, extra_info: str = '') -> None:
         """Provides basic information about the algorithm to the console."""

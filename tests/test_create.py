@@ -3,31 +3,38 @@ import pytest
 from core.create import create_model, SetModels, YamlParameters, CheckParamsValid
 from core.exceptions import MissingVariableError
 
+import torch
+
 
 @pytest.fixture
 def yaml_params() -> YamlParameters:
     return YamlParameters('parameters')
 
 
-def test_create_model_valid() -> None:
+@pytest.fixture
+def device() -> str:
+    return 'cuda:0' if torch.cuda.is_available() else 'cpu'
+
+
+def test_create_model_valid(device) -> None:
     try:
-        model = create_model('dqn')
+        model = create_model('dqn', devices=(device, None))
         assert True
     except (AssertionError, MissingVariableError):
         assert False
 
 
-def test_create_model_invalid_model_type() -> None:
+def test_create_model_invalid_model_type(device) -> None:
     try:
-        model = create_model('test')
+        model = create_model('test', devices=(device, None))
         assert False
     except ValueError:
         assert True
 
 
-def test_set_models_valid(yaml_params) -> None:
+def test_set_models_valid(yaml_params, device) -> None:
     try:
-        set_model = SetModels(yaml_params)
+        set_model = SetModels(yaml_params, devices=(device, None))
         assert True
     except MissingVariableError:
         assert False

@@ -9,7 +9,7 @@ from utils.helper import number_to_num_letter, normalize, to_tensor, timer, time
 from utils.logger import RDQNLogger
 
 import torch
-from torch.nn.utils import clip_grad_norm_
+import torch.nn as nn
 
 
 class RainbowDQN(Agent):
@@ -20,12 +20,18 @@ class RainbowDQN(Agent):
         model_params (ModelParameters) - a data class containing model specific parameters
         params (AgentParameters) - a data class containing Rainbow DQN specific parameters
         buffer_params (BufferParameters) - a class containing parameters for the buffer
+        devices (tuple) - the types of GPU devices, first element must be a string and
+          the second a list of CUDA device IDs or None.
+          For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
         seed (int) - an integer for recreating results
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: AgentParameters, buffer_params: BufferParameters, seed: int) -> None:
+                 params: AgentParameters, buffer_params: BufferParameters, devices: tuple,
+                 seed: int) -> None:
         self.logger = RDQNLogger()
         super().__init__(env_details, params, seed, self.logger)
+        self.device = devices[0]  # primary device
+        self.multi_devices = devices[1]  # list or None
 
         self.env = env_details.make_env('dqn')
         self.action_size = env_details.n_actions
@@ -36,6 +42,20 @@ class RainbowDQN(Agent):
                                               self.device, self.logger)
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)
+
+        # Handle for multi-GPUs
+        if self.multi_devices is not None:
+            self.local_network = nn.parallel.DistributedDataParallel(
+                self.local_network,
+                device_ids=self.multi_devices,
+                output_device=self.device
+            )
+
+            self.target_network = nn.parallel.DistributedDataParallel(
+                self.target_network,
+                device_ids=self.multi_devices,
+                output_device=self.device
+            )
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
@@ -80,7 +100,7 @@ class RainbowDQN(Agent):
         loss = (weights * loss).mean()
         self.optimizer.zero_grad()
         loss.backward()
-        clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
+        nn.utils.clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
         self.optimizer.step()
 
         # Log actions

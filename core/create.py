@@ -27,9 +27,18 @@ import torch
 import torch.optim as optim
 
 
-def create_model(model_type: str, filename: str = 'parameters') -> Union[DQN, RainbowDQN, PPO]:
-    """Initializes predefined parameters from a yaml file and creates a model of the specified type.
-    Returns the model as a class instance."""
+def create_model(model_type: str, devices: tuple, filename: str = 'parameters') -> Union[DQN, RainbowDQN, PPO]:
+    """
+    Initializes predefined parameters from a yaml file and creates a model of the specified type.
+    Returns the model as a class instance.
+
+    Parameters:
+        model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
+        devices (tuple) - the types of GPU devices, first element must be a string and
+                          the second a list of CUDA device IDs or None.
+                          For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
+        filename (str) - the YAML filename in the root directory that contains hyperparameters (default: parameters)
+    """
     valid_names = ['dqn', 'ppo', 'rainbow']
     name = model_type.lower()
     if name not in valid_names:
@@ -42,7 +51,7 @@ def create_model(model_type: str, filename: str = 'parameters') -> Union[DQN, Ra
     CheckParamsValid(name, params)
 
     # Create selected model
-    set_model = SetModels(params)
+    set_model = SetModels(params, devices)
     return set_model.create(name)
 
 
@@ -181,11 +190,12 @@ class CheckParamsValid:
 
 class SetModels:
     """A class that sets the parameters from a predefined yaml file and creates model instances."""
-    def __init__(self, yaml_params: YamlParameters) -> None:
+    def __init__(self, yaml_params: YamlParameters, devices: tuple) -> None:
         self.yaml_params = yaml_params
         self.seed = yaml_params.environment['seed']
         self.optim_params = yaml_params.core_optimizer
         self.dqn_core_params = {**self.yaml_params.core_agent, **self.yaml_params.dqn_core}
+        self.devices = devices
 
         # Seeding
         random.seed(self.seed)
@@ -227,7 +237,7 @@ class SetModels:
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )
-        return DQN(self.env_details, model_params, params, self.seed)
+        return DQN(self.env_details, model_params, params, self.devices, self.seed)
 
     def __create_rainbow_dqn(self) -> RainbowDQN:
         """Creates a Rainbow DQN model from predefined parameters."""
@@ -241,7 +251,7 @@ class SetModels:
             n_actions=self.env_details.n_actions,
             n_atoms=params.n_atoms
         )
-        return RainbowDQN(self.env_details, model_params, params, buffer_params, self.seed)
+        return RainbowDQN(self.env_details, model_params, params, buffer_params, self.devices, self.seed)
 
     def __create_ppo(self) -> PPO:
         """Creates a PPO model from predefined parameters."""
@@ -253,7 +263,7 @@ class SetModels:
 
         ppo_params = {**self.yaml_params.core_agent, **self.yaml_params.ppo}
         params = PPOParameters(**ppo_params)
-        return PPO(self.env_details, model_params, params, self.seed)
+        return PPO(self.env_details, model_params, params, self.devices, self.seed)
 
 
 def get_utility_params(filename: str = 'parameters') -> dict:
