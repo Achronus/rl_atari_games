@@ -9,10 +9,11 @@ from utils.logger import Logger
 
 class Agent:
     """A base class for all agents."""
-    def __init__(self, env_details: EnvDetails, params: AgentParameters,
+    def __init__(self, env_details: EnvDetails, params: AgentParameters, device: str,
                  seed: int, logger: Logger) -> None:
         self.env_details = env_details
         self.params = params
+        self.device = device
         self.seed = seed
         self.logger = logger
 

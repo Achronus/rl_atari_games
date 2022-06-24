@@ -11,7 +11,6 @@ from utils.helper import number_to_num_letter, normalize, to_tensor, timer
 from utils.logger import DQNLogger
 
 import torch
-import torch.nn as nn
 
 DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward', 'next_state', 'done'])
 
@@ -24,17 +23,13 @@ class DQN(Agent):
         env_details (EnvDetails) - a class containing parameters for the environment
         model_params (ModelParameters) - a data class containing model specific parameters
         params (AgentParameters) - a data class containing DQN specific parameters
-        devices (tuple) - the types of GPU devices, first element must be a string and
-                  the second a list of CUDA device IDs or None.
-                  For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
+        device (str) - name of CUDA device ('cpu' or 'cuda:0')
         seed (int) - an integer for recreating results
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: AgentParameters, devices: tuple, seed: int) -> None:
+                 params: AgentParameters, device: str, seed: int) -> None:
         self.logger = DQNLogger()
-        super().__init__(env_details, params, seed, self.logger)
-        self.device = devices[0]  # primary device
-        self.multi_devices = devices[1]  # list or None
+        super().__init__(env_details, params, device, seed, self.logger)
 
         self.env = env_details.make_env('dqn')
         self.action_size = env_details.n_actions
@@ -43,20 +38,6 @@ class DQN(Agent):
 
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)  # Fixed target network
-
-        # Handle for multi-GPUs
-        if self.multi_devices is not None:
-            self.local_network = nn.parallel.DistributedDataParallel(
-                self.local_network,
-                device_ids=self.multi_devices,
-                output_device=self.device
-            )
-
-            self.target_network = nn.parallel.DistributedDataParallel(
-                self.target_network,
-                device_ids=self.multi_devices,
-                output_device=self.device
-            )
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric

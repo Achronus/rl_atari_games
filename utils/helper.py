@@ -13,16 +13,17 @@ from utils.init_devices import CUDADevices
 import torch
 
 
-def set_devices(threshold: float = 2e9) -> tuple:
+def set_device(device: str = None, threshold: float = 2e9) -> str:
     """
     Gets a string defining CUDA or CPU based on GPU availability.
 
     Parameters:
+        device (str) - an optional parameter that defines a CUDA device to use
         threshold (float) - an acceptance threshold for devices with higher available memory (default: ~2GB)
     """
     devices = CUDADevices(threshold)
-    devices.set_devices()
-    return devices.device, devices.multi_devices
+    devices.set_device(device)
+    return devices.device
 
 
 def to_tensor(x: Union[list, np.array, torch.Tensor]) -> torch.Tensor:

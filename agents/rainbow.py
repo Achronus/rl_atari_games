@@ -20,18 +20,13 @@ class RainbowDQN(Agent):
         model_params (ModelParameters) - a data class containing model specific parameters
         params (AgentParameters) - a data class containing Rainbow DQN specific parameters
         buffer_params (BufferParameters) - a class containing parameters for the buffer
-        devices (tuple) - the types of GPU devices, first element must be a string and
-          the second a list of CUDA device IDs or None.
-          For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
+        device (str) - name of CUDA device ('cpu' or 'cuda:0')
         seed (int) - an integer for recreating results
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: AgentParameters, buffer_params: BufferParameters, devices: tuple,
-                 seed: int) -> None:
+                 params: AgentParameters, buffer_params: BufferParameters, device: str, seed: int) -> None:
         self.logger = RDQNLogger()
-        super().__init__(env_details, params, seed, self.logger)
-        self.device = devices[0]  # primary device
-        self.multi_devices = devices[1]  # list or None
+        super().__init__(env_details, params, device, seed, self.logger)
 
         self.env = env_details.make_env('dqn')
         self.action_size = env_details.n_actions
@@ -42,20 +37,6 @@ class RainbowDQN(Agent):
                                               self.device, self.logger)
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)
-
-        # Handle for multi-GPUs
-        if self.multi_devices is not None:
-            self.local_network = nn.parallel.DistributedDataParallel(
-                self.local_network,
-                device_ids=self.multi_devices,
-                output_device=self.device
-            )
-
-            self.target_network = nn.parallel.DistributedDataParallel(
-                self.target_network,
-                device_ids=self.multi_devices,
-                output_device=self.device
-            )
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
