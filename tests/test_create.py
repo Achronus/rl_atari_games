@@ -2,7 +2,6 @@ import pytest
 
 from core.create import create_model, SetModels, YamlParameters, CheckParamsValid
 from core.exceptions import MissingVariableError
-from core.parameters import EnvParameters
 
 
 @pytest.fixture

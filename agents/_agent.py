@@ -1,6 +1,7 @@
 import gzip
 import os
 import shutil
+import tarfile
 
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
@@ -61,9 +62,13 @@ class Agent:
         # Store logger to separate file
         save_model(name, dict(logger=self.logger))
 
-        # Read file by chunks and store piece by piece
-        with open(storage_in, 'rb') as fin, gzip.open(storage_out, "wb") as fout:
-            shutil.copyfileobj(fin, fout)
+        # Remove file if already exists
+        if os.path.exists(storage_out):
+            os.remove(storage_out)
+
+        # Create new version of file
+        with tarfile.open(storage_out, "w:gz") as tar:
+            tar.add(storage_in, arcname=f"{name}.pt")
 
         os.remove(storage_in)  # Remove uncompressed file
         print(f"Saved logger data to '{storage_out}'. Total size: {os.stat(storage_out).st_size} bytes")

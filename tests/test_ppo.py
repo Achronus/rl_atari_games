@@ -37,10 +37,14 @@ def ppo(env_details, model_params, ppo_params) -> PPO:
     return PPO(env_details, model_params, ppo_params, seed=1)
 
 
-def test_ppo_act_valid(ppo) -> None:
-    ppo.network = ppo.network.cpu()
+@pytest.fixture
+def device() -> str:
+    return 'cuda' if torch.cuda.is_available() else 'cpu'
+
+
+def test_ppo_act_valid(ppo, device) -> None:
     state = normalize(to_tensor(ppo.envs.reset()))
-    action_probs = ppo.network(state)[0]
+    action_probs = ppo.network(state.to(device))[0]
     preds = ppo.act(action_probs)
     assert type(preds) == dict
 
@@ -69,9 +73,8 @@ def test_ppo_learn_valid(ppo) -> None:
         assert False
 
 
-def test_ppo_clipped_value_loss_valid(ppo) -> None:
+def test_ppo_clipped_value_loss_valid(ppo, device) -> None:
     # Get state values
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     state = normalize(to_tensor(ppo.envs.reset())).to(device)
     state_values = ppo.network(state)[1]
 
@@ -83,9 +86,8 @@ def test_ppo_clipped_value_loss_valid(ppo) -> None:
     assert type(value_loss.item()) == float
 
 
-def test_ppo_clip_surrogate_valid(ppo) -> None:
+def test_ppo_clip_surrogate_valid(ppo, device) -> None:
     # Get predictions
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
     state = normalize(to_tensor(ppo.envs.reset())).to(device)
     action_probs, state_values = ppo.network(state)
     preds = ppo.act(action_probs)

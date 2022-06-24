@@ -17,6 +17,7 @@ class EnvParameters:
     record_every: int = 100
     seed: int = 1
 
+    assert isinstance(env_name, str), "'env_name' must be a string!"
 
 @dataclass
 class ModelParameters:
@@ -38,6 +39,9 @@ class CoreDQNParameters(AgentParameters):
     tau: float = 0.001  # Soft updater for target network
     update_steps: int = 4  # How often to update the network
     max_timesteps: int = 1000  # Max before episode end
+
+    assert isinstance(gamma, float), "'gamma' must be a float value!"
+    assert isinstance(tau, float), "'tau' must be a float value!"
 
 
 @dataclass

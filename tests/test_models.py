@@ -52,7 +52,7 @@ def test_load_model_invalid_model_type() -> None:
 
         model = load_model('test', device='cpu', model_type='a2c')
         assert False
-    except ValueError:
+    except (ValueError, _pickle.UnpicklingError):
         os.remove(filepath)
         assert True
 

@@ -4,7 +4,8 @@ from typing import Union
 import numpy as np
 import yaml
 
-from agents.dqn import DQN, RainbowDQN
+from agents.dqn import DQN
+from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
 from core.env_details import EnvDetails
 from core.exceptions import MissingVariableError

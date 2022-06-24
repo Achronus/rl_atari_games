@@ -3,11 +3,7 @@ from core.parameters import EnvParameters
 
 
 def test_env_parameters_invalid_env_name() -> None:
-    try:
-        EnvParameters(100)
-        assert False
-    except TypeError:
-        assert True
+    assert EnvParameters(100)
 
 
 def test_set_envs_valid_img_size() -> None:

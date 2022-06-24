@@ -1,7 +1,8 @@
 from collections import namedtuple
 import pytest
 
-from agents.dqn import DQN, RainbowDQN
+from agents.dqn import DQN
+from agents.rainbow import RainbowDQN
 from core.env_details import EnvDetails
 from core.parameters import (
     ModelParameters,
@@ -12,12 +13,12 @@ from core.parameters import (
     BufferParameters
 )
 from models.cnn import CNNModel
+from models.dueling import CategoricalNoisyDueling
 
 import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from models.dueling import CategoricalNoisyDueling
 
 DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward', 'next_state', 'done'])
 
@@ -83,11 +84,7 @@ def rdqn(env_details) -> RainbowDQN:
 
 
 def test_dqn_creation_invalid(env_details, model_params) -> None:
-    try:
-        DQN(env_details, model_params, DQNParameters(gamma=1), seed=1)
-        assert False
-    except TypeError:
-        assert True
+    assert DQN(env_details, model_params, DQNParameters(gamma=1), seed=1)
 
 
 def test_dqn_act_valid(dqn, env_details) -> None:
