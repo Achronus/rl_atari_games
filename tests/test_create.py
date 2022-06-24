@@ -18,7 +18,7 @@ def device() -> str:
 
 def test_create_model_valid(device) -> None:
     try:
-        model = create_model('dqn', devices=(device, None))
+        model = create_model('dqn', device)
         assert True
     except (AssertionError, MissingVariableError):
         assert False
@@ -26,7 +26,7 @@ def test_create_model_valid(device) -> None:
 
 def test_create_model_invalid_model_type(device) -> None:
     try:
-        model = create_model('test', devices=(device, None))
+        model = create_model('test', device)
         assert False
     except ValueError:
         assert True
@@ -34,7 +34,7 @@ def test_create_model_invalid_model_type(device) -> None:
 
 def test_set_models_valid(yaml_params, device) -> None:
     try:
-        set_model = SetModels(yaml_params, devices=(device, None))
+        set_model = SetModels(yaml_params, device)
         assert True
     except MissingVariableError:
         assert False

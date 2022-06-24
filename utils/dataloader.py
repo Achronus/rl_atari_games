@@ -24,7 +24,7 @@ class DataLoader:
     def load_dqn_model(self) -> DQN:
         """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
         dqn = DQN(self.cp_data['env_details'], self.cp_data['model_params'], self.cp_data['params'],
-                  devices=(self.device, None), seed=self.cp_data['seed'])
+                  device=self.device, seed=self.cp_data['seed'])
         dqn.local_network.load_state_dict(self.cp_data['other'].get('local_network'), strict=False)
         dqn.target_network.load_state_dict(self.cp_data['other'].get('target_network'), strict=False)
         return dqn
@@ -32,8 +32,7 @@ class DataLoader:
     def load_rdqn_model(self) -> RainbowDQN:
         """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
         rdqn = RainbowDQN(self.cp_data['env_details'], self.cp_data['model_params'], self.cp_data['params'],
-                          self.cp_data['other'].get('buffer_params'), devices=(self.device, None),
-                          seed=self.cp_data['seed'])
+                          self.cp_data['other'].get('buffer_params'), device=self.device, seed=self.cp_data['seed'])
         rdqn.local_network.load_state_dict(self.cp_data['other'].get('local_network'), strict=False)
         rdqn.target_network.load_state_dict(self.cp_data['other'].get('target_network'), strict=False)
         return rdqn
@@ -41,7 +40,7 @@ class DataLoader:
     def load_ppo_model(self) -> PPO:
         """Load a PPO model's parameters from the given filename. Files must be stored within a saved_models folder."""
         ppo = PPO(self.cp_data['env_details'], self.cp_data['model_params'], self.cp_data['params'],
-                  devices=(self.device, None), seed=self.cp_data['seed'])
+                  device=self.device, seed=self.cp_data['seed'])
         ppo.network.load_state_dict(self.cp_data['other'].get('network'), strict=False)
         return ppo
 

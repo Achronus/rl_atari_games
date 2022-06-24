@@ -7,7 +7,6 @@ from models.actor_critic import ActorCritic
 from models.cnn import CNNModel
 from models.dueling import CategoricalNoisyDueling
 from models.linear import NoisyLinear
-from utils.dataloader import DataLoader
 from utils.model_utils import load_model
 
 import torch

@@ -40,7 +40,6 @@ def model_params(env_details) -> ModelParameters:
 
 @pytest.fixture
 def dqn_params(env_details) -> DQNParameters:
-    network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
     return DQNParameters(
         gamma=0.99,
         tau=1e-3,
@@ -68,7 +67,7 @@ def device() -> str:
 
 @pytest.fixture
 def dqn(env_details, model_params, dqn_params, device) -> DQN:
-    return DQN(env_details, model_params, dqn_params, seed=1, devices=(device, None))
+    return DQN(env_details, model_params, dqn_params, device=device, seed=1)
 
 
 @pytest.fixture
@@ -85,11 +84,11 @@ def rdqn(env_details, device) -> RainbowDQN:
         network=network,
         optimizer=optim.Adam(network.parameters(), lr=1e3, eps=1e3)
     )
-    return RainbowDQN(env_details, model_params, params, buffer_params, seed=1, devices=(device, None))
+    return RainbowDQN(env_details, model_params, params, buffer_params, device=device, seed=1)
 
 
 def test_dqn_creation_invalid(env_details, model_params, device) -> None:
-    assert DQN(env_details, model_params, DQNParameters(gamma=1), seed=1, devices=(device, None))
+    assert DQN(env_details, model_params, DQNParameters(gamma=1), device=device, seed=1)
 
 
 def test_dqn_act_valid(dqn, env_details) -> None:
