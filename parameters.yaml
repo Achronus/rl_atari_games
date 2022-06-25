@@ -1,10 +1,10 @@
 ---
 environment:
   env_name: "ALE/SpaceInvaders-v5"
-  img_size: 128 # Width and height
+  img_size: 84 # Width and height
   stack_size: 4 # Number of image frames to stack together
   capture_video: False # Video recording
-  record_every: 1000 # Number of episodes between each video recording
+  record_every: 10000 # Number of episodes between each video recording
   seed: 368 # Random seed for reproducing results
 other_environments:
   env_2: "ALE/Qbert-v5"
@@ -13,8 +13,8 @@ other_environments:
 ---
 core:
   utility:
-    num_episodes: 100000 # Number of episodes to train the model
-    save_every: 1000 # Every number of episodes to save the model
+    num_episodes: 50000 # Number of episodes to train the model
+    save_every: 10000 # Every number of episodes to save the model
   agent:
     gamma: 0.99 # Discount factor
     update_steps: 4 # How often to update the network

@@ -1,5 +1,6 @@
 import os
 import tarfile
+import re
 
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
@@ -32,12 +33,19 @@ class Agent:
         Parameters:
             i_episode (int) - current episode number
             save_count (int) - episode number to save
-            filename (str) - a custom filename. Note: episode number is post-appended
+            filename (str) - a custom filename. Note: environment name and episode number are post-appended
             extra_data (dict) - additional items to store (e.g. network.state_dict())
         """
         if i_episode % save_count == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)
-            filename += f'_ep{int(ep_idx)}{ep_letter}'.lower()
+
+            # Reduce env name if large
+            env_name = self.env_details.name
+            if len(env_name) > 6:
+                env_name = re.findall('[A-Z][^A-Z]*', env_name)  # Uppercase letter split
+                env_name = ''.join([item[:3] for item in env_name])  # First 3 letters of each word
+
+            filename += f'_{env_name}_ep{int(ep_idx)}{ep_letter.lower()}'
             # Create initial param_dict
             param_dict = dict(
                 env_details=self.env_details,
@@ -48,11 +56,11 @@ class Agent:
             save_model(filename, param_dict)  # Save model
             print(f"Saved model at episode {i_episode} as: '{filename}.pt'.")
 
-            self.__save_logger(filename)
+            self.__save_logger(filename, env_name)
 
-    def __save_logger(self, filename: str) -> None:
+    def __save_logger(self, filename: str, env_name: str) -> None:
         """Stores the agents logger object with its values to a compressed file."""
-        name = f"{filename.split('_')[0]}_logger_data"  # Gets model name from filename
+        name = f"{filename.split('_')[0]}_{env_name}_logger_data"  # Gets model name from filename
         storage_in = f"saved_models/{name}.pt"
         storage_out = f"saved_models/{name}.tar.gz"
 

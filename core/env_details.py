@@ -5,7 +5,7 @@ from gym.wrappers import (
     ResizeObservation,
     RecordVideo
 )
-import time
+from datetime import datetime
 
 from core.parameters import EnvParameters
 
@@ -35,19 +35,20 @@ class EnvDetails:
 
         self.__set()
 
-    def make_env(self, model_type: str, idx: int = 0) -> gym.Env:
+    def make_env(self, model_type: str) -> gym.Env:
         """
         Makes a gym environment with multiple wrappers.
 
         Parameters:
-            model_type (str) - name or type of the model (prepended to record video filename)
-            idx (int) - number of environment (useful for multiple environments)
+            model_type (str) - type of model to create (prepended to record video filename)
         """
         env = gym.make(self.gym_name)
 
-        if self.capture_video and idx == 0:
-            run_name = f'{model_type}_{self.gym_name}_seed{self.seed}_{int(time.time())}'
-            env = RecordVideo(env, f"videos/{run_name}".lower(), episode_trigger=lambda t: t % self.record_every == 0)
+        if self.capture_video and model_type != 'init':
+            date_time = datetime.now().strftime("date%d%m%Y_time%H%M%S")
+            run_name = f'{model_type}_{self.gym_name}_seed{self.seed}_{date_time}'
+            env = RecordVideo(env, f"videos/{run_name}".lower(),
+                              episode_trigger=lambda t: t % self.record_every == 0)
 
         env = ResizeObservation(env, shape=self.img_size)  # default image dim: [128, 128]
         env = GrayScaleObservation(env, keep_dim=False)  # Grayscale images
@@ -64,7 +65,7 @@ class EnvDetails:
         """
         Initializes the class instance attributes.
         """
-        env = self.make_env('model')
+        env = self.make_env('init')
 
         self.obs_space = env.observation_space
         self.action_space = env.action_space

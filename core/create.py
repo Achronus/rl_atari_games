@@ -27,14 +27,15 @@ import torch
 import torch.optim as optim
 
 
-def create_model(model_type: str, device: str = None, filename: str = 'parameters') -> Union[DQN, RainbowDQN, PPO]:
+def create_model(model_type: str, env: str = 'primary', device: str = None, filename: str = 'parameters') -> Union[DQN, RainbowDQN, PPO]:
     """
     Initializes predefined parameters from a yaml file and creates a model of the specified type.
     Returns the model as a class instance.
 
     Parameters:
         model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
-        device (str) - an optional parameter that defines a CUDA device to use
+        env (str) - an optional parameter that defines a custom environment to use (default: primary)
+        device (str) - an optional parameter that defines a CUDA device to use (default: None)
         filename (str) - the YAML filename in the root directory that contains hyperparameters (default: parameters)
     """
     valid_names = ['dqn', 'ppo', 'rainbow']
@@ -49,8 +50,8 @@ def create_model(model_type: str, device: str = None, filename: str = 'parameter
     CheckParamsValid(name, params)
 
     # Create selected model
-    set_model = SetModels(params, device)
-    return set_model.create(name)
+    set_model = SetModels(name, params, env, device)
+    return set_model.create()
 
 
 class YamlParameters:
@@ -158,8 +159,7 @@ class CheckParamsValid:
         Returns the updated list."""
         keys = self.get_attribute_names(EnvParameters)
 
-        updated_keys = [key.replace(key, 'ENV_1') if key == 'ENV_NAME' else key for key in keys]  # ENV_NAME -> ENV_1
-        updated_keys = [key for key in updated_keys if key not in ['RECORD_EVERY', 'SEED']]  # Remove keys
+        updated_keys = [key for key in keys if key not in ['RECORD_EVERY']]  # Remove keys
         return updated_keys
 
     def __get_buffer_keys(self) -> list:
@@ -187,13 +187,25 @@ class CheckParamsValid:
 
 
 class SetModels:
-    """A class that sets the parameters from a predefined yaml file and creates model instances."""
-    def __init__(self, yaml_params: YamlParameters, device: str = None) -> None:
+    """
+    A class that sets the parameters from a predefined yaml file and creates model instances.
+
+    Parameters:
+        model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
+        yaml_params (YamlParameters) - class object that contains parameters from a YAML file
+        env (str) - an optional parameter that defines a custom environment to use. When set to
+                    'primary', environment 'env_name' from 'yaml_params' is used (default: primary)
+        device (str) - an optional parameter that defines a CUDA device to use (default: None)
+    """
+    def __init__(self, model_type: str, yaml_params: YamlParameters,
+                 env: str = 'primary', device: str = None) -> None:
+        self.model_type = model_type
         self.yaml_params = yaml_params
         self.seed = yaml_params.environment['seed']
         self.optim_params = yaml_params.core_optimizer
         self.dqn_core_params = {**self.yaml_params.core_agent, **self.yaml_params.dqn_core}
         self.device = device
+        self.env = env
 
         # Seeding
         random.seed(self.seed)
@@ -202,13 +214,13 @@ class SetModels:
 
         self.env_details = self.__create_env_details()
 
-    def create(self, model_name: str) -> Union[DQN, RainbowDQN, PPO]:
+    def create(self) -> Union[DQN, RainbowDQN, PPO]:
         """Create a model based on the given name."""
-        if model_name == 'dqn':
+        if self.model_type == 'dqn':
             return self.__create_dqn()
-        elif model_name == 'rainbow':
+        elif self.model_type == 'rainbow':
             return self.__create_rainbow_dqn()
-        elif model_name == 'ppo':
+        elif self.model_type == 'ppo':
             return self.__create_ppo()
 
     def __create_model_params(self, net_type: BaseModel, **net_kwargs) -> ModelParameters:
@@ -221,6 +233,9 @@ class SetModels:
 
     def __create_env_details(self) -> EnvDetails:
         """Creates an environment details class."""
+        if self.env is not 'primary':
+            self.yaml_params.environment['env_name'] = self.env
+
         env_params = EnvParameters(**self.yaml_params.environment)
         return EnvDetails(env_params)
 

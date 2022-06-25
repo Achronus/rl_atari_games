@@ -28,7 +28,7 @@ class RainbowDQN(Agent):
         self.logger = RDQNLogger()
         super().__init__(env_details, params, device, seed, self.logger)
 
-        self.env = env_details.make_env('dqn')
+        self.env = env_details.make_env('rainbow')
         self.action_size = env_details.n_actions
         self.batch_size = buffer_params.batch_size
         self.buffer_params = buffer_params
