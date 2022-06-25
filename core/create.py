@@ -233,7 +233,7 @@ class SetModels:
 
     def __create_env_details(self) -> EnvDetails:
         """Creates an environment details class."""
-        if self.env is not 'primary':
+        if self.env != 'primary':
             self.yaml_params.environment['env_name'] = self.env
 
         env_params = EnvParameters(**self.yaml_params.environment)
