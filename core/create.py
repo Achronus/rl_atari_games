@@ -242,7 +242,9 @@ class SetModels:
     def __create_dqn(self) -> DQN:
         """Creates a DQN model from predefined parameters."""
         core_params = {key: val for key, val in self.dqn_core_params.items() if key not in ['clip_grad']}
-        dqn_params = {**core_params, **self.yaml_params.dqn_vanilla}
+        buffer_params = {'buffer_size': self.yaml_params.dqn_buffer['buffer_size'],
+                         'batch_size': self.yaml_params.dqn_buffer['batch_size']}
+        dqn_params = {**core_params, **self.yaml_params.dqn_vanilla, **buffer_params}
         params = DQNParameters(**dqn_params)
 
         model_params = self.__create_model_params(
