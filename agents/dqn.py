@@ -1,4 +1,5 @@
 from collections import namedtuple, Counter
+from typing import Union
 import numpy as np
 import random
 from datetime import datetime
@@ -45,8 +46,9 @@ class DQN(Agent):
         self.timestep = 0
         self.save_batch_time = datetime.now()  # init
 
-    def step(self, experience: DQNExperience) -> None:
-        """Perform a learning step, if there are enough samples in memory."""
+    def step(self, experience: DQNExperience) -> Union[tuple, None]:
+        """Perform a learning step, if there are enough samples in memory.
+        Returns the training loss and Q-value predictions."""
         # Store experience in memory
         self.memory.add(experience)
 
@@ -56,7 +58,9 @@ class DQN(Agent):
         # Perform learning
         if self.timestep == 0 and len(self.memory) > self.params.batch_size:
             experiences = self.memory.sample()
-            self.learn(experiences)
+            train_loss, avg_return = self.learn(experiences)
+            return train_loss, avg_return
+        return None
 
     def act(self, state: torch.Tensor, epsilon: float) -> int:
         """
@@ -81,8 +85,8 @@ class DQN(Agent):
             return np.argmax(action_values.cpu().numpy()).item()
         return random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences: tuple) -> None:
-        """Updates the network parameters."""
+    def learn(self, experiences: tuple) -> tuple:
+        """Updates the network parameters. Returns the training loss and average return."""
         states, actions, rewards, next_states, dones = experiences
 
         # Get max predicted Q-value from target network
@@ -100,16 +104,10 @@ class DQN(Agent):
         loss.backward()
         self.optimizer.step()
 
-        # Log details
-        self.log_data(
-                q_targets_next=q_targets_next,
-                q_targets=q_targets,
-                q_preds=q_preds,
-                train_losses=loss.item()
-        )
-
         # Update target network
         self.__soft_update()
+
+        return loss.item(), q_targets.mean().item()
 
     def __soft_update(self) -> None:
         """
@@ -147,7 +145,7 @@ class DQN(Agent):
                 # Initialize state and score
                 score = 0
                 state = self.env.reset()
-                actions = []
+                actions, train_losses, avg_returns = [], [], []
 
                 # Iterate over timesteps
                 for t in range(self.params.max_timesteps):
@@ -156,7 +154,8 @@ class DQN(Agent):
                     next_state, reward, done, info = self.env.step(action)  # Take an action
 
                     # Perform learning
-                    self.step(DQNExperience(state.cpu(), action, reward, normalize(next_state), done))
+                    exp = DQNExperience(state.cpu(), action, reward, normalize(next_state), done)
+                    metrics = self.step(exp)
 
                     # Update state and score
                     state = next_state
@@ -166,11 +165,20 @@ class DQN(Agent):
                     if done:
                         break
 
-                    # Add action to list
+                    # Add items to list
                     actions.append(action)
 
-                # Log metrics
-                self.log_data(ep_scores=score, actions=Counter(actions))
+                    if metrics is not None:
+                        train_losses.append(metrics[0])
+                        avg_returns.append(metrics[1])
+
+                # Log episodic metrics
+                self.log_data(
+                    ep_scores=score,
+                    actions=Counter(actions),
+                    train_losses=np.asarray(train_losses).mean(),
+                    avg_returns=np.asarray(avg_returns).mean()
+                )
 
                 # Decrease epsilon
                 eps = max(self.params.eps_end, self.params.eps_decay * eps)

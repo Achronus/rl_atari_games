@@ -35,8 +35,7 @@ class Logger:
 class DQNLogger(Logger):
     """A DQN logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['actions', 'train_losses', 'ep_scores', 'q_targets_next',
-                     'q_targets', 'q_preds']
+        self.keys = ['avg_returns', 'actions', 'train_losses', 'ep_scores']
         super().__init__(self.keys)
 
 
