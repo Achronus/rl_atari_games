@@ -18,6 +18,7 @@ The file structure for the artefact is outlined below.
 +-- agents
 |   +-- _agent.py
 |   +-- dqn.py
+|   +-- intrinsic.py
 |   +-- ppo.py
 |   +-- rainbow.py
 +-- core
