@@ -383,10 +383,10 @@ class RolloutBuffer:
         size (int) - number of items to store in the buffer
     """
 
-    def __init__(self, size: int, num_agents: int, env_input_shape: tuple, action_shape: tuple) -> None:
+    def __init__(self, size: int, num_envs: int, env_input_shape: tuple, action_shape: tuple) -> None:
         self.keys = ['states', 'actions', 'rewards', 'dones', 'log_probs', 'state_values']
         self.size = size
-        self.num_agents = num_agents
+        self.num_envs = num_envs
         self.env_input_shape = env_input_shape
         self.action_shape = action_shape
         self.states = None
@@ -407,13 +407,13 @@ class RolloutBuffer:
 
     def reset(self) -> None:
         """Resets keys to placeholder values."""
-        self.states = torch.zeros((self.size, self.num_agents) + self.env_input_shape)
-        self.actions = torch.zeros((self.size, self.num_agents) + self.action_shape)
+        self.states = torch.zeros((self.size, self.num_envs) + self.env_input_shape)
+        self.actions = torch.zeros((self.size, self.num_envs) + self.action_shape)
 
         predefined_keys = ['states', 'actions']
         for key in self.keys:
             if key not in predefined_keys:
-                setattr(self, key, torch.zeros((self.size, self.num_agents)))
+                setattr(self, key, torch.zeros((self.size, self.num_envs)))
 
     def sample(self, keys: list) -> namedtuple:
         """Samples data from the buffer based on the provided keys."""
