@@ -31,19 +31,19 @@ class PPO(Agent):
         self.logger = PPOLogger()
         super().__init__(env_details, params, device, seed, self.logger)
 
-        self.envs = gym_vec_env_v0(env_details.make_env('ppo'), num_envs=params.num_agents, multiprocessing=True)
-        self.buffer = RolloutBuffer(params.rollout_size, params.num_agents,
+        self.envs = gym_vec_env_v0(env_details.make_env('ppo'), num_envs=params.num_envs, multiprocessing=True)
+        self.buffer = RolloutBuffer(params.rollout_size, params.num_envs,
                                     env_details.input_shape, env_details.action_space.shape)
 
         self.network = model_params.network.to(self.device)
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
-        self.num_agents = params.num_agents
+        self.num_envs = params.num_envs
 
         self.total_timesteps: int = 0
         self.start_time = time.time()
-        self.batch_size = int(params.num_agents * params.rollout_size)
+        self.batch_size = int(params.num_envs * params.rollout_size)
         self.mini_batch_size = int(self.batch_size // params.num_mini_batches)
 
         self.save_batch_time = datetime.now()  # init
@@ -105,7 +105,7 @@ class PPO(Agent):
 
         # Iterate over rollout size
         for i_rollout in range(self.params.rollout_size):
-            self.total_timesteps += 1 * self.num_agents  # timesteps so far
+            self.total_timesteps += 1 * self.num_envs  # timesteps so far
             state = normalize(to_tensor(state)).to(self.device)
 
             with torch.no_grad():
@@ -233,7 +233,7 @@ class PPO(Agent):
         self._initial_output(num_episodes,
                              f'Surrogate clipping size: {self.params.loss_clip}, '
                              f'rollout size: {self.params.rollout_size}, '
-                             f'num agents: {self.params.num_agents}, '
+                             f'num agents: {self.params.num_envs}, '
                              f'num network updates: {self.params.update_steps}, '
                              f'batch size: {self.batch_size}, '
                              f'training iterations: {num_updates}.')
@@ -254,7 +254,7 @@ class PPO(Agent):
                 self.__output_progress(num_updates, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'ppo_rollout{self.params.rollout_size}'
-                                                    f'_agents{self.params.num_agents}',
+                                                    f'_agents{self.params.num_envs}',
                                            extra_data={
                                                'network': self.network.state_dict(),
                                                'optimizer': self.optimizer,

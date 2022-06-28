@@ -6,6 +6,7 @@ from agents.dqn import DQN
 from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
 from utils.dataloader import DataLoader
+from core.enums import ValidModels
 
 
 def load_model(filename: str, device: str, model_type: str) -> Union[DQN, PPO, RainbowDQN]:
@@ -22,7 +23,7 @@ def load_model(filename: str, device: str, model_type: str) -> Union[DQN, PPO, R
     assert os.path.exists(f'saved_models/{file}'), f"'{file}' does not exist in the 'saved_models' folder!"
 
     model = model_type.lower()
-    valid_models = ['DQN', 'PPO', 'rainbow']
+    valid_models = list(ValidModels.__members__.keys())
     loader = DataLoader(filename, device)
 
     # Load desired model

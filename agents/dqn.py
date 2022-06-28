@@ -8,6 +8,8 @@ from agents._agent import Agent
 from core.buffer import ReplayBuffer
 from core.parameters import AgentParameters, ModelParameters
 from core.env_details import EnvDetails
+from intrinsic.controller import IMController
+from intrinsic.parameters import IMExperience
 from utils.helper import number_to_num_letter, normalize, to_tensor, timer
 from utils.logger import DQNLogger
 
@@ -19,16 +21,17 @@ DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward
 class DQN(Agent):
     """
     A basic Deep Q-Network that uses an experience replay buffer and fixed Q-targets.
-
-    Parameters:
-        env_details (EnvDetails) - a class containing parameters for the environment
-        model_params (ModelParameters) - a data class containing model specific parameters
-        params (AgentParameters) - a data class containing DQN specific parameters
-        device (str) - name of CUDA device ('cpu' or 'cuda:0')
-        seed (int) - an integer for recreating results
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: AgentParameters, device: str, seed: int) -> None:
+                 params: AgentParameters, device: str, seed: int, im_type: tuple = None) -> None:
+        """
+        :param env_details (EnvDetails) - a class containing parameters for the environment
+        :param model_params (ModelParameters) - a data class containing model specific parameters
+        :param params (AgentParameters) - a data class containing DQN specific parameters
+        :param device (str) - name of CUDA device ('cpu' or 'cuda:0')
+        :param seed (int) - an integer for recreating results
+        :param im_type (tuple[str, IMParameters]) - indicates the type of intrinsic motivation to use with its parameters
+        """
         self.logger = DQNLogger()
         super().__init__(env_details, params, device, seed, self.logger)
 
@@ -43,10 +46,17 @@ class DQN(Agent):
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
 
+        self.im_type = None
+        self.im_method = None
+
+        if im_type is not None:
+            self.im_type = im_type[0]
+            self.im_method = IMController(im_type[0], im_type[1], self.device)
+
         self.timestep = 0
         self.save_batch_time = datetime.now()  # init
 
-    def step(self, experience: DQNExperience) -> Union[tuple, None]:
+    def step(self, experience: DQNExperience) -> Union[float, None]:
         """Perform a learning step, if there are enough samples in memory.
         Returns the training loss and Q-value predictions."""
         # Store experience in memory
@@ -58,8 +68,8 @@ class DQN(Agent):
         # Perform learning
         if self.timestep == 0 and len(self.memory) > self.params.batch_size:
             experiences = self.memory.sample()
-            train_loss, avg_return = self.learn(experiences)
-            return train_loss, avg_return
+            train_loss = self.learn(experiences)
+            return train_loss
         return None
 
     def act(self, state: torch.Tensor, epsilon: float) -> int:
@@ -85,7 +95,7 @@ class DQN(Agent):
             return np.argmax(action_values.cpu().numpy()).item()
         return random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences: tuple) -> tuple:
+    def learn(self, experiences: tuple) -> float:
         """Updates the network parameters. Returns the training loss and average return."""
         states, actions, rewards, next_states, dones = experiences
 
@@ -95,11 +105,23 @@ class DQN(Agent):
         # Compute Q-targets for the current state
         q_targets = rewards + (self.params.gamma * q_targets_next * (1 - dones))
 
+        # Add intrinsic reward
+        if self.im_method is not None:
+            im_exp = IMExperience(states, next_states, actions)
+            im_return = normalize(self.im_method.module.compute_return(im_exp))
+            q_targets += im_return
+            q_targets = q_targets.detach()
+
         # Get expected Q-values from local network
         q_preds = self.local_network(states).gather(1, actions)
 
         # Compute and minimize loss
         loss = self.loss(q_preds, q_targets.to(torch.float32))
+
+        # Add intrinsic loss
+        if self.im_method is not None:
+            loss = self.im_method.module.compute_loss(im_exp, loss)
+
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
@@ -107,7 +129,7 @@ class DQN(Agent):
         # Update target network
         self.__soft_update()
 
-        return loss.item(), q_targets.mean().item()
+        return loss.item()
 
     def __soft_update(self) -> None:
         """
@@ -135,7 +157,8 @@ class DQN(Agent):
         self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, '
                                            f'batch size: {self.memory.batch_size}, '
                                            f'max timesteps: {int(timesteps_idx)}{timesteps_letter.lower()}, '
-                                           f'num network updates: {self.params.update_steps}.')
+                                           f'num network updates: {self.params.update_steps}, '
+                                           f'intrinsic method: {self.im_type}')
 
         # Time training
         with timer('Total time taken:'):
@@ -145,7 +168,7 @@ class DQN(Agent):
                 # Initialize state and score
                 score = 0
                 state = self.env.reset()
-                actions, train_losses, avg_returns = [], [], []
+                actions, train_losses = [], []
 
                 # Iterate over timesteps
                 for t in range(self.params.max_timesteps):
@@ -155,7 +178,7 @@ class DQN(Agent):
 
                     # Perform learning
                     exp = DQNExperience(state.cpu(), action, reward, normalize(next_state), done)
-                    metrics = self.step(exp)
+                    train_loss = self.step(exp)
 
                     # Update state and score
                     state = next_state
@@ -168,25 +191,24 @@ class DQN(Agent):
                     # Add items to list
                     actions.append(action)
 
-                    if metrics is not None:
-                        train_losses.append(metrics[0])
-                        avg_returns.append(metrics[1])
+                    if train_loss is not None:
+                        train_losses.append(train_loss)
 
                 # Log episodic metrics
                 self.log_data(
                     ep_scores=score,
                     actions=Counter(actions),
-                    train_losses=np.asarray(train_losses).mean(),
-                    avg_returns=np.asarray(avg_returns).mean()
+                    train_losses=train_losses[-1]
                 )
 
                 # Decrease epsilon
                 eps = max(self.params.eps_end, self.params.eps_decay * eps)
 
                 # Display output and save model
+                model_name = f'dqn{self.im_type}' if self.im_type is not None else 'dqn'
                 self.__output_progress(num_episodes, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
-                                           filename=f'dqn_batch{self.memory.batch_size}',
+                                           filename=f'{model_name}_batch{self.memory.batch_size}',
                                            extra_data={
                                                'local_network': self.local_network.state_dict(),
                                                'target_network': self.target_network.state_dict(),

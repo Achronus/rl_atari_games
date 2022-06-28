@@ -20,7 +20,7 @@ Can be used in conjunction with the `set_save_every()` function, in the `create.
 
 - `GAMMA` - a `float` value representing the return discount factor.
 - `LEARNING_RATE` - a `float` value for the PyTorch optimizer.
-- `EPSILON` - a `float` value for the PyTorch optimizer.
+- `EPSILON` - a `float` value for the PyTorch optimizer ($\epsilon$).
 - `SEED` - an `integer` value used for reproducing results.
 - `UPDATE_STEPS` - an `integer` value denoting how often to update the network.
 - `CLIP_GRAD` - a `float` value indicating the maximum value obtainable during gradient clipping.
@@ -45,8 +45,8 @@ _(Note)_ Official paper: [Playing Atari with Deep Reinforcement Learning](https:
 - `REPLAY_PERIOD` - an `integer` representing the number of transitions before learning starts.
 - `LEARN_FREQUENCY` - an `integer` for the number of timesteps to perform agent learning. For example, a learning frequency of 4 results in the agent learning every 4 timesteps.
 - `REWARD_CLIP` - a `float` value denoting the bounds for rewards. For example, 0.1 would clip rewards in the range of [-0.1, +0.1].
-- `PRIORITY_EXPONENT` - a `float` value denoting the prioritized replay buffer exponent (alpha).
-- `PRIORITY_WEIGHT` - a `float` stating the initial prioritized replay buffer importance sampling weight (beta).
+- `PRIORITY_EXPONENT` - a `float` value denoting the prioritized replay buffer exponent ($\alpha$).
+- `PRIORITY_WEIGHT` - a `float` stating the initial prioritized replay buffer importance sampling weight ($\beta$).
 - `N_ATOMS` - an `integer` indicating the number of atoms (distributions) in the Categorical DQN. Atoms are referred to as the 'canonical returns' of the value distribution.
 - `V_MIN`, `V_MAX` - `integers` for the minimum and maximum size of the atoms. For example, [-10, +10].
 
@@ -56,9 +56,18 @@ _(Note)_ Official paper: [Rainbow: Combining Improvements in Deep Reinforcement 
 
 - `LOSS_CLIP` - a `float` value used for the surrogate clipping.
 - `ROLLOUT_SIZE` - an `integer` value indicating the number of samples to train the agent on during each rollout step. 
-- `NUM_AGENTS` - an `integer` value representing the number of agents/environments used during training. Used for parallelization.
-- `ENTROPY_COEF` - a `float` value denoting the regularisation coefficient for entropy (lambda). `c1` in the official paper.
+- `NUM_ENVS` - an `integer` value representing the number of environments used during training.
+- `ENTROPY_COEF` - a `float` value denoting the regularisation coefficient for entropy ($\lambda$). `c1` in the official paper.
 - `VALUE_LOSS_COEF` - a `float` value that acts as the value loss coefficient. `c2` in the official paper.
 - `NUM_MINI_BATCHES` - an `integer` value highlighting the number of mini-batches during training. Used to divide the batches into smaller chunks for more optimal learning.
 
 _(Note)_ Official paper: [Proximal Policy Optimization Algorithms](https://arxiv.org/abs/1707.06347)
+
+
+## Intrinsic Motivation
+
+### Curiosity
+
+- `COMPARSION_WEIGHT` - a `float` value used to weigh the inverse model loss against the forward model loss ($\beta$).
+- `IMPORTANCE_WEIGHT` - a `float` value used to weigh the importance of the policy gradient loss against the importance of learning the intrinsic reward signal ($\lambda$).
+- `SCALING_FACTOR` - a `float` value that represents the scaling factor for the reward ($\eta$).

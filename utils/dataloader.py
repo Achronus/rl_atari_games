@@ -6,6 +6,7 @@ from agents.dqn import DQN
 from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
 from core.parameters import ModelParameters
+from core.enums import CoreCheckpointParams
 from models._base import BaseModel
 from utils.logger import Logger
 
@@ -46,7 +47,7 @@ class DataLoader:
         """Gets the checkpoint data, creates the respective objects and return the info as a dictionary."""
         checkpoint = torch.load(f'saved_models/{self.filename}.pt', map_location=self.device)
         env_details = checkpoint.get('env_details')
-        core_keys = ['env_details', 'params', 'logger', 'seed', 'model_params']
+        core_keys = list(CoreCheckpointParams.__members__.keys())
 
         return {
             'env_details': env_details,

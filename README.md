@@ -18,21 +18,25 @@ The file structure for the artefact is outlined below.
 +-- agents
 |   +-- _agent.py
 |   +-- dqn.py
-|   +-- intrinsic.py
 |   +-- ppo.py
 |   +-- rainbow.py
 +-- core
 |   +-- buffer.py
 |   +-- create.py
+|   +-- enums.py
 |   +-- env_details.py
 |   +-- exceptions.py
 |   +-- parameters.py
 |   +-- README.md
 |   +-- template.yaml
++-- intrinsic
+|   +-- controller.py
+|   +-- model.py
+|   +-- module.py
+|   +-- parameters.py
 +-- models
 |   +-- _base.py
 |   +-- actor_critic.py
-|   +-- cnn.py
 |   +-- dueling.py
 |   +-- linear.py
 +-- tests
@@ -64,6 +68,7 @@ The file structure for the artefact is outlined below.
 
 - `\agents` - contains the RL algorithm implementations
 - `\core` - core functionality of the artefact
+- `\intrinsic` - intrinsic motivation functionality
 - `\models` - neural network models for the agents
 - `\tests` - unit tests for the application
 - `\utils` - utility classes and functions that provide extra functionality
@@ -123,5 +128,8 @@ Rainbow DQN -
 PPO - 
 - [ericyangyu: PPO for beginners (GitHub)](https://github.com/ericyangyu/PPO-for-Beginners)
 - [vwxyzjn: PPO implementation details (GitHub)](https://github.com/vwxyzjn/ppo-implementation-details)
+
+Intrinsic Motivation - 
+- [Alexander Zai and Brandon Brown: Deep Reinforcement Learning In Action, Chapter 8: Curiosity-Driven Exploration (book)](https://livebook.manning.com/book/deep-reinforcement-learning-in-action/chapter-8/)
 
 A special thanks to each of these developers for creating incredible work in the RL space. Please check out their original work using the links above.

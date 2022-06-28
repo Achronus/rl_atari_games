@@ -50,7 +50,18 @@ dqn:
 ppo:
   loss_clip: 0.1 # Value for surrogate clipping
   rollout_size: 100 # Number of samples to train on
-  num_agents: 8 # Number of agents used during training
+  num_envs: 8 # Number of environments used during training
   num_mini_batches: 4 # Number of mini-batches during training
   entropy_coef: 0.01 # Coefficient for regularisation (lambda)
   value_loss_coef: 0.5 # Coefficient for decreasing value loss
+
+---
+intrinsic:
+  curiosity:
+    comparison_weight: 0.2 # Weight of inverse model vs forward model loss (beta)
+    importance_weight: 0.1 # Weight for policy gradient loss vs intrinsic reward (lambda)
+    scaling_factor: 1. # A scaling factor for the reward (eta)
+  empowerment:
+    test: 0.1
+  surprise_based:
+    test2: 0.1

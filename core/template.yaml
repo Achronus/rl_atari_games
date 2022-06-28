@@ -45,7 +45,19 @@ dqn:
 ppo:
   loss_clip: 0.1
   rollout_size: 1
-  num_agents: 2
+  num_envs: 2
   num_mini_batches: 1
   entropy_coef: 0.1
   value_loss_coef: 0.1
+
+
+---
+intrinsic:
+  curiosity:
+    comparison_weight: 0.1
+    importance_weight: 0.1
+    scaling_factor: 1.
+  empowerment:
+    test: 0.1
+  surprise_based:
+    test2: 0.1
