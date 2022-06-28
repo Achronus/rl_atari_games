@@ -4,7 +4,7 @@ import os
 import pytest
 
 from models.actor_critic import ActorCritic
-from models.cnn import CNNModel
+from models._base import BaseModel
 from models.dueling import CategoricalNoisyDueling
 from models.linear import NoisyLinear
 from utils.model_utils import load_model
@@ -23,13 +23,13 @@ def input_shape() -> tuple[int, int, int]:
 
 
 def test_cnn_model_conv_size_valid(n_actions, input_shape) -> None:
-    cnn = CNNModel(input_shape=input_shape, n_actions=n_actions)
+    cnn = BaseModel(input_shape=input_shape, n_actions=n_actions)
     size = cnn.get_conv_size(input_shape=input_shape)
     assert size == 9216
 
 
 def test_cnn_model_forward_valid(n_actions, input_shape) -> None:
-    cnn = CNNModel(input_shape=input_shape, n_actions=n_actions)
+    cnn = BaseModel(input_shape=input_shape, n_actions=n_actions)
     data = cnn.forward(torch.rand((128,) + input_shape))
     assert data.shape == (128, 6)
 

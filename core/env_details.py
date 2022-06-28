@@ -35,14 +35,17 @@ class EnvDetails:
 
         self.__set()
 
-    def make_env(self, model_type: str) -> gym.Env:
+    def make_env(self, model_type: str, visualize: bool = False) -> gym.Env:
         """
         Makes a gym environment with multiple wrappers.
 
-        Parameters:
-            model_type (str) - type of model to create (prepended to record video filename)
+        :param model_type (str) - type of model to create (prepended to record video filename)
+        :param visualize (bool) - flag to enable video rendering, default is False
         """
-        env = gym.make(self.gym_name)
+        if visualize:
+            env = gym.make(self.gym_name, render_mode='human')
+        else:
+            env = gym.make(self.gym_name)
 
         if self.capture_video and model_type != 'init':
             date_time = datetime.now().strftime("date%d%m%Y_time%H%M%S")

@@ -1,11 +1,11 @@
-from models.cnn import CNNModel
+from models._base import BaseModel
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
 
-class ActorCritic(CNNModel):
+class ActorCritic(BaseModel):
     """
     An Actor-Critic model used for PPO.
 

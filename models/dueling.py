@@ -1,4 +1,4 @@
-from models.cnn import CNNModel
+from models._base import BaseModel
 from models.linear import NoisyLinear
 
 import torch
@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-class CategoricalNoisyDueling(CNNModel):
+class CategoricalNoisyDueling(BaseModel):
     """
     A Noisy Dueling Deep Q-Network with value distribution. Combines Noisy networks, Dueling network, and
     Distributional Value Learning (C51/Categorical DQN). The implementation is based the Noisy Nets for Exploration,

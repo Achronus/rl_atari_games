@@ -38,12 +38,7 @@ class Agent:
         """
         if i_episode % save_count == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)
-
-            # Reduce env name if large
-            env_name = self.env_details.name
-            if len(env_name) > 6:
-                env_name = re.findall('[A-Z][^A-Z]*', env_name)  # Uppercase letter split
-                env_name = ''.join([item[:3] for item in env_name])  # First 3 letters of each word
+            env_name = self.save_file_env_name()  # Reduce environment name if needed
 
             filename += f'_{env_name}_ep{int(ep_idx)}{ep_letter.lower()}'
             # Create initial param_dict
@@ -94,3 +89,17 @@ class Agent:
     def log_data(self, **kwargs) -> None:
         """Adds data to the logger."""
         self.logger.add(**kwargs)
+
+    def save_file_env_name(self, threshold: int = 6, num_chars: int = 3) -> str:
+        """
+        Reduces the environment name if it is larger than threshold. Returns the updated name.
+
+        :param threshold (int) - value for comparing length of environment name, larger than this value reduces it
+        :param num_chars (int) - number of letters for each word during reduction
+        """
+        # Reduce env name if large
+        env_name = self.env_details.name
+        if len(env_name) > threshold:
+            env_name = re.findall('[A-Z][^A-Z]*', env_name)  # Uppercase letter split
+            env_name = ''.join([item[:num_chars] for item in env_name])  # First num_chars of each word
+        return env_name
