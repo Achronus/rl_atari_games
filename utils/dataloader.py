@@ -6,7 +6,7 @@ from agents.dqn import DQN
 from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
 from core.parameters import ModelParameters
-from models.cnn import CNNModel
+from models._base import BaseModel
 from utils.logger import Logger
 
 import torch
@@ -18,8 +18,6 @@ class DataLoader:
         self.filename = filename
         self.device = device
         self.cp_data = self.get_checkpoint_data()
-
-        self.logger_data = self.unpack_logger_data()
 
     def load_dqn_model(self) -> DQN:
         """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
@@ -55,24 +53,25 @@ class DataLoader:
             'params': checkpoint.get('params'),
             'seed': checkpoint.get('seed'),
             'model_params': ModelParameters(
-                network=CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
+                network=BaseModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
                 optimizer=checkpoint.get('optimizer'),
                 loss_metric=checkpoint.get('loss_metric')
             ),
             'other': {key: val for key, val in checkpoint.items() if key not in core_keys}
         }
 
-    def unpack_logger_data(self) -> Union[Logger, None]:
+    def unpack_logger_data(self, env_name: str) -> Union[Logger, None]:
         """A helper function to unpack compressed logger data stored in the 'saved_models' directory.
         Returns an instance of the logger type."""
-        name = f"saved_models/{self.filename.split('_')[0]}_logger_data"
+        name = f"saved_models/{self.filename.split('_')[0]}_{env_name}_logger_data"
+        folder = '/'.join(self.filename.split('/')[:-1])
         file_in = f"{name}.tar.gz"
         file_out = f"{name}.pt"
 
         if os.path.exists(file_in):
             # Extract file
             tar = tarfile.open(file_in, "r:gz")
-            tar.extractall("saved_models")
+            tar.extractall(f"saved_models/{folder}")
             tar.close()
 
             # Load file to logger

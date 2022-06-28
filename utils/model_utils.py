@@ -36,8 +36,10 @@ def load_model(filename: str, device: str, model_type: str) -> Union[DQN, PPO, R
         raise ValueError(f"Model type '{model_type}' does not exist! Must be one of: {valid_models}.")
 
     # Update model logger if data available
-    if loader.logger_data is not None:
-        loaded_model.logger = loader.logger_data
+    env_name = loaded_model.save_file_env_name()
+    logger_data = loader.unpack_logger_data(env_name)
+    if logger_data is not None:
+        loaded_model.logger = logger_data
 
     print(f"Loaded model: '{loader.filename}'")
     return loaded_model

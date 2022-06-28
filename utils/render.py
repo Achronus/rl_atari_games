@@ -1,54 +1,64 @@
 from typing import Union
 from IPython import display
 
-import gym
 import matplotlib.pyplot as plt
+import torch
 
-from agents.dqn import DQN, RainbowDQN
+from agents.dqn import DQN
+from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
-from utils.helper import normalize, to_tensor
+from utils.helper import to_tensor, normalize
 
 
-def video_render(env: gym.Env, agent: Union[DQN, PPO, RainbowDQN], steps: int = 3000) -> None:
+def video_render(agent: Union[DQN, PPO, RainbowDQN], episodes: int = 5) -> None:
     """Watch a video representation of an agent in a given environment."""
-    state = env.reset()
+    env = agent.env_details.make_env('testing', visualize=True)
 
-    for _ in range(steps):
-        state = normalize(to_tensor(state)).to(agent.device)
-        if type(agent) == DQN:
-            action = agent.act(state, 0.01)  # Generate an action
-        else:  # PPO
-            action = agent.act(state)  # Generate an action
-        next_state, reward, done, info = agent.env.step(action)  # Take an action
-        env.render()
+    for episode in range(1, episodes+1):
+        state = env.reset()
+        done = False
+        score = 0
+        while not done:
+            state = normalize(to_tensor(state)).to(agent.device)
+            if type(agent) == DQN:
+                action = agent.act(state, 0.01)  # Generate an action
+            else:
+                action = agent.act(state)  # Generate an action
+            next_state, reward, done, info = env.step(action)  # Take an action
 
-        state = next_state
-
-        if done:
-            state = env.reset()
-
+            state = next_state
+            score += reward
+        print(f'Episode: {episode}, Score:{score}')
     env.close()
 
 
-def plot_render(env: gym.Env, agent: Union[DQN, PPO, RainbowDQN], steps: int = 3000) -> None:
-    """Watch a plot representation of an agent in a given environment."""
-    state = env.reset()
-    img = plt.imshow(env.render(mode='rgb_array'))  # only call this once
+def plot_render(agent: Union[DQN, PPO, RainbowDQN], episodes: int = 5) -> None:
+    """EPILEPSY WARNING: without the correct settings, this plot flickers in Jupyter Notebooks.
+    It is highly recommended to use 'video_render' instead.
 
-    for _ in range(steps):
-        img.set_data(env.render(mode='rgb_array'))  # just update the data
-        display.display(plt.gcf())
-        display.clear_output(wait=True)
+    Watch a plot representation of an agent in a given environment."""
+    state = agent.env.reset()
+    img = plt.imshow(agent.env.render(mode='rgb_array'))  # only call this once
 
-        if type(agent) == DQN:
-            action = agent.act(state, 0.01)  # Generate an action
-        else:  # PPO
-            action = agent.act(state)
-        next_state, reward, done, info = agent.env.step(action)  # Take an action
+    for episode in range(1, episodes+1):
+        done = False
+        score = 0
+        while not done:
+            img.set_data(agent.env.render(mode='rgb_array'))  # just update the data
+            display.display(plt.gcf())
+            display.clear_output(wait=True)
 
-        state = next_state
+            state = normalize(to_tensor(state)).to(agent.device)
+            if type(agent) == DQN:
+                action = agent.act(state, 0.01)  # Generate an action
+            else:  # PPO
+                action = agent.act(state)
+            next_state, reward, done, info = agent.env.step(action)  # Take an action
 
-        if done:
-            state = env.reset()
+            state = next_state
+            score += reward
 
-    env.close()
+            if done:
+                state = agent.env.reset()
+        print(f'Episode: {episode}, Score:{score}')
+    agent.env.close()
