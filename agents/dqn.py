@@ -76,9 +76,8 @@ class DQN(Agent):
         """
         Returns an action for a given state based on an epsilon greedy policy.
 
-        Parameters:
-            state (torch.Tensor) - current state
-            epsilon (float) - current epsilon
+        :param state (torch.Tensor) - current state
+        :param epsilon (float) - current epsilon
         """
         state = state.unsqueeze(0)
 
@@ -143,10 +142,9 @@ class DQN(Agent):
         """
         Train the agent.
 
-        Parameters:
-            num_episodes (int) - the number of iterations to train the agent on
-            print_every (int) - the number of episodes before outputting information
-            save_count (int) - the number of episodes before saving the model
+        :param num_episodes (int) - the number of iterations to train the agent on
+        :param print_every (int) - the number of episodes before outputting information
+        :param save_count (int) - the number of episodes before saving the model
         """
         # Set initial epsilon
         eps = self.params.eps_start

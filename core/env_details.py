@@ -14,8 +14,7 @@ class EnvDetails:
     """
     A basic class that contains an OpenAI Gym's environment details.
 
-    Parameters:
-        params (EnvParameters) - a data class containing environment parameters
+    :param params (EnvParameters) - a data class containing environment parameters
     """
     def __init__(self, params: EnvParameters) -> None:
         assert not params.env_name == '', "'env_name' must contain an environment name!"

@@ -2,8 +2,7 @@ class Logger:
     """
     A base logger that stores information for each episode iteration.
 
-    Parameters:
-        keys (list[str]) - a list of names of information to store
+    :param keys (list[str]) - a list of names of information to store
     """
     def __init__(self, keys: list) -> None:
         self.keys = keys

@@ -47,13 +47,13 @@ class DataLoader:
         """Gets the checkpoint data, creates the respective objects and return the info as a dictionary."""
         checkpoint = torch.load(f'saved_models/{self.filename}.pt', map_location=self.device)
         env_details = checkpoint.get('env_details')
-        core_keys = list(CoreCheckpointParams.__members__.keys())
+        core_keys = [item.value for item in CoreCheckpointParams]
 
         return {
-            'env_details': env_details,
-            'params': checkpoint.get('params'),
-            'seed': checkpoint.get('seed'),
-            'model_params': ModelParameters(
+            CoreCheckpointParams.ENV_DETAILS.value: env_details,
+            CoreCheckpointParams.PARAMS.value: checkpoint.get('params'),
+            CoreCheckpointParams.SEED.value: checkpoint.get('seed'),
+            CoreCheckpointParams.MODEL_PARAMS.value: ModelParameters(
                 network=BaseModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
                 optimizer=checkpoint.get('optimizer'),
                 loss_metric=checkpoint.get('loss_metric')

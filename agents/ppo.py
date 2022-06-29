@@ -62,9 +62,8 @@ class PPO(Agent):
         Returns a dictionary containing the action, log probability
         and entropy for a given set of action probabilities.
 
-        Parameters:
-            action_probs (torch.Tensor) - a tensor of action probabilities
-            action (torch.Tensor) - existing action values, optional
+        :param action_probs (torch.Tensor) - a tensor of action probabilities
+        :param action (torch.Tensor) - existing action values, optional
         """
         dist = torch.distributions.Categorical(action_probs)
         if action is None:
@@ -229,10 +228,9 @@ class PPO(Agent):
         """
         Train the agent.
 
-        Parameters:
-            num_episodes (int) - the number of iterations to train the agent on
-            print_every (int) - the number of episodes before outputting information
-            save_count (int) - the number of episodes before saving the model
+        :param num_episodes (int) - the number of iterations to train the agent on
+        :param print_every (int) - the number of episodes before outputting information
+        :param save_count (int) - the number of episodes before saving the model
         """
         num_updates = num_episodes // self.batch_size  # Training iterations
         assert not num_updates == 0, f"'num_episodes' must be larger than the 'batch_size': {self.batch_size}!"

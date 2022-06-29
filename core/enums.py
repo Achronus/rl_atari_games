@@ -7,11 +7,10 @@ from intrinsic.model import CuriosityModel
 class CoreCheckpointParams(Enum):
     """An enum that stores the core checkpoint (save) parameter names.
     Used in the DataLoader class."""
-    env_details = 0
-    params = 1
-    logger = 2
-    seed = 3
-    model_params = 4
+    ENV_DETAILS = 'env_details'
+    PARAMS = 'params'
+    SEED = 'seed'
+    MODEL_PARAMS = 'model_params'
 
 
 class OptionalParams(Enum):
@@ -24,7 +23,7 @@ class OptionalParams(Enum):
 
 
 class ValidModels(Enum):
-    """An enum that stores the valid model names. Used in the create_model function."""
+    """An enum that stores the valid model names. Used in the create_model and load_model functions."""
     DQN = 'dqn'
     PPO = 'ppo'
     RAINBOW = 'rainbow'

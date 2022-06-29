@@ -5,8 +5,7 @@ class CUDADevices:
     """
     A helper class for setting up primary and secondary CUDA devices.
 
-    Parameters:
-        threshold (float) - an acceptance threshold for devices with higher available memory (default: ~2GB)
+    :param threshold (float) - an acceptance threshold for devices with higher available memory (default: ~2GB)
     """
     def __init__(self, threshold: float = 2e9) -> None:
         self.threshold = threshold

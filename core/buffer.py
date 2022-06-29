@@ -14,11 +14,10 @@ class ReplayBuffer:
     """
     A basic representation of an experience replay buffer.
 
-    Parameters:
-        buffer_size (int) - size of the memory buffer
-        batch_size (int) - size of each training batch
-        device (str) - device name for data calculations (CUDA GPU or CPU)
-        seed (int) - a random number for recreating results
+    :param buffer_size (int) - size of the memory buffer
+    :param batch_size (int) - size of each training batch
+    :param device (str) - device name for data calculations (CUDA GPU or CPU)
+    :param seed (int) - a random number for recreating results
     """
 
     def __init__(self, buffer_size: int, batch_size: int, device: str, seed: int) -> None:
@@ -74,11 +73,10 @@ class SumTree:
     """A binary tree data structure for storing replay buffer transitions. Each leaf contains the
     priority score for a single experience.
 
-    Parameters:
-        capacity (int) - size of tree memory (number of experiences to store)
-        device (str) - CUDA device to store the data on (CPU or GPU)
-        n_steps (int) - number of steps to use for multi-step (N-step) learning
-        input_shape (tuple) - the environment state's input shape (width, height)
+    :param capacity (int) - size of tree memory (number of experiences to store)
+    :param device (str) - CUDA device to store the data on (CPU or GPU)
+    :param n_steps (int) - number of steps to use for multi-step (N-step) learning
+    :param input_shape (tuple) - the environment state's input shape (width, height)
     """
     def __init__(self, capacity: int, device: str, n_steps: int, input_shape: tuple) -> None:
         self.position = 0  # Pointer
@@ -237,11 +235,10 @@ class PrioritizedReplayBuffer:
     A prioritized experience replay buffer. As illustrated in the Prioritized Experience Replay paper:
     https://arxiv.org/pdf/1511.05952.pdf.
 
-    Parameters:
-        params (BufferParameters) - a class containing parameters for the buffer
-        device (str) - CUDA device name for data calculations (GPU or CPU)
-        n_steps (int) - Number of steps for multi-step learning
-        stack_size (int) - number of state frames to stack together
+    :param params (BufferParameters) - a class containing parameters for the buffer
+    :param device (str) - CUDA device name for data calculations (GPU or CPU)
+    :param n_steps (int) - Number of steps for multi-step learning
+    :param stack_size (int) - number of state frames to stack together
     """
     def __init__(self, params: BufferParameters, n_steps: int, stack_size: int, device: str, logger) -> None:
         self.params = params
@@ -379,8 +376,7 @@ class RolloutBuffer:
     """
     A rollout buffer for storing agent experiences and other useful metrics.
 
-    Parameters:
-        size (int) - number of items to store in the buffer
+    :param size (int) - number of items to store in the buffer
     """
 
     def __init__(self, size: int, num_envs: int, env_input_shape: tuple, action_shape: tuple) -> None:

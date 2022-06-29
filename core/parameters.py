@@ -19,6 +19,7 @@ class EnvParameters:
 
     assert isinstance(env_name, str), "'env_name' must be a string!"
 
+
 @dataclass
 class ModelParameters:
     """A data class for model (neural network) parameters."""

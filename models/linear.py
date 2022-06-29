@@ -10,10 +10,9 @@ class NoisyLinear(nn.Module):
     A Noisy Linear layer. Implements noise as illustrated in the Noisy Networks for Exploration paper:
     https://arxiv.org/pdf/1706.10295v3.pdf.
 
-    Parameters:
-        in_features (int) - number of input features
-        out_features (int) - number of output features
-        std (float) - the standard deviation for initialising the layer (default = 0.5)
+    :param in_features (int) - number of input features
+    :param out_features (int) - number of output features
+    :param std (float) - the standard deviation for initialising the layer (default = 0.5)
     """
     def __init__(self, in_features: int, out_features: int, std: float = 0.5) -> None:
         super().__init__()

@@ -162,10 +162,9 @@ class RainbowDQN(Agent):
         """
         Train the agent.
 
-        Parameters:
-            num_episodes (int) - the number of iterations to train the agent on
-            print_every (int) - the number of episodes before outputting information
-            save_count (int) - the number of episodes before saving the model
+        :param num_episodes (int) - the number of iterations to train the agent on
+        :param print_every (int) - the number of episodes before outputting information
+        :param save_count (int) - the number of episodes before saving the model
         """
         # Output info to console
         buffer_idx, buffer_letter = number_to_num_letter(self.buffer.capacity)

@@ -17,9 +17,8 @@ def set_device(device: str = None, threshold: float = 2e9) -> str:
     """
     Gets a string defining CUDA or CPU based on GPU availability.
 
-    Parameters:
-        device (str) - an optional parameter that defines a CUDA device to use
-        threshold (float) - an acceptance threshold for devices with higher available memory (default: ~2GB)
+    :param device (str) - an optional parameter that defines a CUDA device to use
+    :param threshold (float) - an acceptance threshold for devices with higher available memory (default: ~2GB)
     """
     devices = CUDADevices(threshold)
     devices.set_device(device)
@@ -70,9 +69,8 @@ def timer_string(time_elapsed: timedelta, message: str = '') -> str:
     Helper function for outputting a timer string.
     Example: 01:02:13 -> '1 hrs, 2 mins, 13 secs'
 
-    Parameters:
-        time_elapsed (datetime.timedelta) - a timedelta containing a datatime time
-        message (str) - an optional message prepended to the front of the returned string
+    :param time_elapsed (datetime.timedelta) - a timedelta containing a datatime time
+    :param message (str) - an optional message prepended to the front of the returned string
     """
     split_time = str(time_elapsed).split(':')
     hrs, mins = [int(item) for item in split_time[:2]]

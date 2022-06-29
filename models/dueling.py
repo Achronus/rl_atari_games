@@ -16,10 +16,9 @@ class CategoricalNoisyDueling(BaseModel):
     Dueling Network Architectures paper: https://arxiv.org/pdf/1511.06581.pdf.
     Distributional Perspective paper: https://arxiv.org/pdf/1707.06887.pdf.
 
-    Parameters:
-        input_shape (tuple[int]) - image input dimensions (including batch size)
-        n_actions (int) - number of possible actions in the environment
-        n_atoms (int) - number of distributions
+    :param input_shape (tuple[int]) - image input dimensions (including batch size)
+    :param n_actions (int) - number of possible actions in the environment
+    :param n_atoms (int) - number of distributions
     """
     def __init__(self, input_shape: tuple, n_actions: int, n_atoms: int) -> None:
         super().__init__(input_shape, n_actions)

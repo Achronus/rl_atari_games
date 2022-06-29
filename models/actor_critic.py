@@ -9,9 +9,8 @@ class ActorCritic(BaseModel):
     """
     An Actor-Critic model used for PPO.
 
-    Parameters:
-        input_shape (tuple[int]) - image input dimensions (including batch size)
-        n_actions (int) - number of possible actions in the environment
+    :param input_shape (tuple[int]) - image input dimensions (including batch size)
+    :param n_actions (int) - number of possible actions in the environment
     """
     def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super().__init__(input_shape, n_actions)

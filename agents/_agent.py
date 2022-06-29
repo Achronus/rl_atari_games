@@ -30,11 +30,10 @@ class Agent:
         """
         Saves the model when the current episode equals the save count.
 
-        Parameters:
-            i_episode (int) - current episode number
-            save_count (int) - episode number to save
-            filename (str) - a custom filename. Note: environment name and episode number are post-appended
-            extra_data (dict) - additional items to store (e.g. network.state_dict())
+        :param i_episode (int) - current episode number
+        :param save_count (int) - episode number to save
+        :param filename (str) - a custom filename. Environment name and episode number are post-appended
+        :param extra_data (dict) - additional items to store (e.g. network.state_dict())
         """
         if i_episode % save_count == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)

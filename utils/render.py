@@ -1,16 +1,13 @@
-from typing import Union
 from IPython import display
 
 import matplotlib.pyplot as plt
-import torch
 
+from agents._agent import Agent
 from agents.dqn import DQN
-from agents.rainbow import RainbowDQN
-from agents.ppo import PPO
 from utils.helper import to_tensor, normalize
 
 
-def video_render(agent: Union[DQN, PPO, RainbowDQN], episodes: int = 5) -> None:
+def video_render(agent: Agent, episodes: int = 5) -> None:
     """Watch a video representation of an agent in a given environment."""
     env = agent.env_details.make_env('testing', visualize=True)
 
@@ -32,7 +29,7 @@ def video_render(agent: Union[DQN, PPO, RainbowDQN], episodes: int = 5) -> None:
     env.close()
 
 
-def plot_render(agent: Union[DQN, PPO, RainbowDQN], episodes: int = 5) -> None:
+def plot_render(agent: Agent, episodes: int = 5) -> None:
     """EPILEPSY WARNING: without the correct settings, this plot flickers in Jupyter Notebooks.
     It is highly recommended to use 'video_render' instead.
 

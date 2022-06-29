@@ -1,10 +1,10 @@
 import os
 import random
 import sys
-from typing import Union
 import numpy as np
 import yaml
 
+from agents._agent import Agent
 from agents.dqn import DQN
 from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
@@ -30,7 +30,7 @@ import torch.optim as optim
 
 
 def create_model(model_type: str, env: str = 'primary', device: str = None,
-                 filename: str = 'parameters', im_type: str = None) -> Union[DQN, RainbowDQN, PPO]:
+                 filename: str = 'parameters', im_type: str = None) -> Agent:
     """
     Initializes predefined parameters from a yaml file and creates a model of the specified type.
     Returns the model as a class instance.
@@ -236,8 +236,8 @@ class SetModels:
             self.im_name = im_type
             self.im_params = self.__create_im_params(im_type)
 
-    def create(self) -> Union[DQN, RainbowDQN, PPO]:
-        """Create a model based on the given name."""
+    def create(self) -> Agent:
+        """Create a model."""
         # Handle intrinsic motivation method
         if self.im_params is not None:
             im_type = (self.im_name, self.im_params)
@@ -313,7 +313,7 @@ class SetModels:
         return RainbowDQN(self.env_details, model_params, params, buffer_params,
                           self.device, self.seed, im_type)
 
-    def __create_ppo(self) -> PPO:
+    def __create_ppo(self, im_type: tuple) -> PPO:
         """Creates a PPO model from predefined parameters."""
         model_params = self.__create_model_params(
             ActorCritic,
@@ -323,7 +323,7 @@ class SetModels:
 
         ppo_params = {**self.yaml_params.core_agent, **self.yaml_params.ppo}
         params = PPOParameters(**ppo_params)
-        return PPO(self.env_details, model_params, params, self.device, self.seed)
+        return PPO(self.env_details, model_params, params, self.device, self.seed, im_type)
 
 
 def get_utility_params(filename: str = 'parameters') -> dict:

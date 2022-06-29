@@ -9,9 +9,8 @@ class BaseModel(nn.Module):
     A base CNN model used for all agents. Uses identical convolutions as seen in the Human-level Control paper:
     https://www.nature.com/articles/nature14236.
 
-    Parameters:
-        input_shape (tuple[int]) - image input dimensions (including batch size)
-        n_actions (int) - number of possible actions in the environment
+    :param input_shape (tuple[int]) - image input dimensions (including batch size)
+    :param n_actions (int) - number of possible actions in the environment
     """
     def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super().__init__()
