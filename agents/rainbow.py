@@ -5,6 +5,8 @@ from agents._agent import Agent
 from core.buffer import PrioritizedReplayBuffer
 from core.parameters import AgentParameters, ModelParameters, BufferParameters, Experience
 from core.env_details import EnvDetails
+from intrinsic.controller import IMController
+from intrinsic.parameters import IMExperience
 from utils.helper import number_to_num_letter, normalize, to_tensor, timer, timer_string
 from utils.logger import RDQNLogger
 
@@ -15,16 +17,17 @@ import torch.nn as nn
 class RainbowDQN(Agent):
     """A Rainbow Deep Q-Network that uses six extensions a-top a traditional DQN.
 
-    Parameters:
-        env_details (EnvDetails) - a class containing parameters for the environment
-        model_params (ModelParameters) - a data class containing model specific parameters
-        params (AgentParameters) - a data class containing Rainbow DQN specific parameters
-        buffer_params (BufferParameters) - a class containing parameters for the buffer
-        device (str) - name of CUDA device ('cpu' or 'cuda:0')
-        seed (int) - an integer for recreating results
+    :param env_details (EnvDetails) - a class containing parameters for the environment
+    :param model_params (ModelParameters) - a data class containing model specific parameters
+    :param params (AgentParameters) - a data class containing Rainbow DQN specific parameters
+    :param buffer_params (BufferParameters) - a class containing parameters for the buffer
+    :param device (str) - name of CUDA device ('cpu' or 'cuda:0')
+    :param seed (int) - an integer for recreating results
+    :param im_type (tuple[str, IMParameters]) - indicates the type of intrinsic motivation to use with its parameters
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: AgentParameters, buffer_params: BufferParameters, device: str, seed: int) -> None:
+                 params: AgentParameters, buffer_params: BufferParameters,
+                 device: str, seed: int, im_type: tuple = None) -> None:
         self.logger = RDQNLogger()
         super().__init__(env_details, params, device, seed, self.logger)
 
@@ -47,6 +50,13 @@ class RainbowDQN(Agent):
         self.priority_weight = buffer_params.priority_weight
         self.priority_weight_increase = 0.
 
+        self.im_type = None
+        self.im_method = None
+
+        if im_type is not None:
+            self.im_type = im_type[0]
+            self.im_method = IMController(im_type[0], im_type[1], self.device)
+
         self.save_batch_time = datetime.now()  # init
 
     def act(self, state: torch.Tensor) -> int:
@@ -66,6 +76,13 @@ class RainbowDQN(Agent):
         # Calculate N-step returns
         returns = torch.matmul(samples['rewards'].cpu(), self.discount_scaling)
 
+        # Add intrinsic reward
+        if self.im_method is not None:
+            im_exp = IMExperience(samples['states'].to(self.device), samples['next_states'].to(self.device),
+                                  samples['actions'].to(self.device))
+            im_return = normalize(self.im_method.module.compute_return(im_exp)).squeeze().cpu()
+            returns += im_return
+
         # Compute Double-Q probabilities and values
         with torch.no_grad():
             double_q_probs = self.compute_double_q_probs(samples['next_states'].to(self.device))
@@ -79,6 +96,11 @@ class RainbowDQN(Agent):
         # Compute and minimize loss
         loss = -torch.sum(double_q * action_probs.cpu(), dim=1).to(self.device)  # Cross-entropy
         loss = (weights * loss).mean()
+
+        # Add intrinsic loss
+        if self.im_method is not None:
+            loss = self.im_method.module.compute_loss(im_exp, loss)
+
         self.optimizer.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
@@ -152,7 +174,8 @@ class RainbowDQN(Agent):
                                            f'batch size: {self.buffer.batch_size}, '
                                            f'max timesteps: {int(timesteps_idx)}{timesteps_letter.lower()}, '
                                            f'num network updates: {self.params.update_steps}, '
-                                           f'replay period: {self.params.replay_period}.')
+                                           f'replay period: {self.params.replay_period}, '
+                                           f'intrinsic method: {self.im_type}.')
 
         # Time training
         with timer('Total time taken:'):
@@ -206,15 +229,17 @@ class RainbowDQN(Agent):
                 # Add episode data to logger
                 self.log_data(
                     ep_scores=score,
-                    avg_returns=self._calc_mean(avg_returns),
-                    train_losses=self._calc_mean(train_losses)
+                    avg_returns=avg_returns[-1],
+                    train_losses=train_losses[-1]
                 )
 
                 # Display output and save model
+                model_name = f'rainbow{self.im_type}' if self.im_type is not None else 'rainbow'
+                buffer_idx, buffer_letter = number_to_num_letter(self.buffer.capacity)
                 self.__output_progress(num_episodes, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
-                                           filename=f'rainbow_batch{self.buffer.batch_size}_'
-                                                    f'buffer{self.buffer.capacity}',
+                                           filename=f'{model_name}_batch{self.buffer.batch_size}_'
+                                                    f'buffer{int(buffer_idx)}{buffer_letter.lower()}',
                                            extra_data={
                                                'local_network': self.local_network.state_dict(),
                                                'target_network': self.target_network.state_dict(),

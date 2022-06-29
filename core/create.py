@@ -41,8 +41,8 @@ def create_model(model_type: str, env: str = 'primary', device: str = None,
     :param filename (str) - the YAML filename in the root directory that contains hyperparameters
     :param im_type (str) - the name of the intrinsic motivation to use ('curiosity', 'empowerment' or 'surprise_based')
     """
-    valid_names = list(ValidModels.__members__.keys())
-    valid_im_names = list(ValidIMMethods.__members__.keys())
+    valid_names = [item.value for item in ValidModels]
+    valid_im_names = [item.value for item in ValidIMMethods]
     name = model_type.lower()
     if name not in valid_names:
         raise ValueError(f"Model type '{model_type}' does not exist! Must be one of: {valid_names}.")
@@ -156,11 +156,11 @@ class CheckParamsValid:
 
         # Set desired parameters
         params = self.core_params + self.env_params
-        if model_type == 'dqn':
+        if model_type == ValidModels.DQN.value:
             params += self.dqn_params
-        elif model_type == 'rainbow':
+        elif model_type == ValidModels.RAINBOW.value:
             params += self.rainbow_params + self.buffer_params
-        elif model_type == 'ppo':
+        elif model_type == ValidModels.PPO.value:
             params += self.ppo_params
 
         # Add intrinsic motivation parameters
@@ -245,11 +245,11 @@ class SetModels:
             im_type = None
 
         # Create class instance
-        if self.model_type == 'dqn':
+        if self.model_type == ValidModels.DQN.value:
             return self.__create_dqn(im_type)
-        elif self.model_type == 'rainbow':
-            return self.__create_rainbow_dqn()
-        elif self.model_type == 'ppo':
+        elif self.model_type == ValidModels.RAINBOW.value:
+            return self.__create_rainbow_dqn(im_type)
+        elif self.model_type == ValidModels.PPO.value:
             return self.__create_ppo()
 
     def __create_im_params(self, im_type: str) -> IMParameters:
@@ -298,7 +298,7 @@ class SetModels:
         )
         return DQN(self.env_details, model_params, params, self.device, self.seed, im_type)
 
-    def __create_rainbow_dqn(self) -> RainbowDQN:
+    def __create_rainbow_dqn(self, im_type: tuple) -> RainbowDQN:
         """Creates a Rainbow DQN model from predefined parameters."""
         rdqn_params = {**self.dqn_core_params, **self.yaml_params.dqn_rainbow}
         params = RainbowDQNParameters(**rdqn_params)
@@ -311,7 +311,7 @@ class SetModels:
             n_atoms=params.n_atoms
         )
         return RainbowDQN(self.env_details, model_params, params, buffer_params,
-                          self.device, self.seed)
+                          self.device, self.seed, im_type)
 
     def __create_ppo(self) -> PPO:
         """Creates a PPO model from predefined parameters."""

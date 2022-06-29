@@ -7,6 +7,7 @@ from agents._agent import Agent
 from core.buffer import RolloutBuffer
 from core.env_details import EnvDetails
 from core.parameters import ModelParameters, PPOParameters
+from intrinsic.controller import IMController
 from utils.helper import to_tensor, normalize, number_to_num_letter, timer, timer_string
 from utils.logger import PPOLogger
 
@@ -19,15 +20,15 @@ class PPO(Agent):
     """
     A basic Proximal Policy Optimization (PPO) algorithm that follows the clip variant.
 
-    Parameters:
-        env_details (EnvDetails) - a class containing parameters for the environment
-        model_params (ModelParameters) - a data class containing model specific parameters
-        params (PPOParameters) - a data class containing PPO specific parameters
-        device (str) - name of CUDA device ('cpu' or 'cuda:0')
-        seed (int) - an integer for recreating results
+    :param env_details (EnvDetails) - a class containing parameters for the environment
+    :param model_params (ModelParameters) - a data class containing model specific parameters
+    :param params (PPOParameters) - a data class containing PPO specific parameters
+    :param device (str) - name of CUDA device ('cpu' or 'cuda:0')
+    :param seed (int) - an integer for recreating results
+    :param im_type (tuple[str, IMParameters]) - indicates the type of intrinsic motivation to use with its parameters
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: PPOParameters, device: str, seed: int) -> None:
+                 params: PPOParameters, device: str, seed: int, im_type: tuple = None) -> None:
         self.logger = PPOLogger()
         super().__init__(env_details, params, device, seed, self.logger)
 
@@ -45,6 +46,13 @@ class PPO(Agent):
         self.start_time = time.time()
         self.batch_size = int(params.num_envs * params.rollout_size)
         self.mini_batch_size = int(self.batch_size // params.num_mini_batches)
+
+        self.im_type = None
+        self.im_method = None
+
+        if im_type is not None:
+            self.im_type = im_type[0]
+            self.im_method = IMController(im_type[0], im_type[1], self.device)
 
         self.save_batch_time = datetime.now()  # init
 
@@ -233,10 +241,11 @@ class PPO(Agent):
         self._initial_output(num_episodes,
                              f'Surrogate clipping size: {self.params.loss_clip}, '
                              f'rollout size: {self.params.rollout_size}, '
-                             f'num agents: {self.params.num_envs}, '
+                             f'num environments: {self.params.num_envs}, '
                              f'num network updates: {self.params.update_steps}, '
                              f'batch size: {self.batch_size}, '
-                             f'training iterations: {num_updates}.')
+                             f'training iterations: {num_updates}, '
+                             f'intrinsic method: {self.im_type}.')
 
         # Time training
         with timer('Total time taken:'):

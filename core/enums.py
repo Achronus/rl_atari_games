@@ -25,17 +25,17 @@ class OptionalParams(Enum):
 
 class ValidModels(Enum):
     """An enum that stores the valid model names. Used in the create_model function."""
-    dqn = 0
-    ppo = 1
-    rainbow = 2
+    DQN = 'dqn'
+    PPO = 'ppo'
+    RAINBOW = 'rainbow'
 
 
 class ValidIMMethods(Enum):
     """An enum that stores the valid intrinsic motivation method names. Used in the
     create_model function."""
-    curiosity = 0
-    empowerment = 1
-    surprise_based = 2
+    CURIOSITY = 'curiosity'
+    EMPOWERMENT = 'empowerment'
+    SURPRISE_BASED = 'surprise_based'
 
 
 class IMType(Enum):
