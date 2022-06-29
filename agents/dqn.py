@@ -10,7 +10,7 @@ from core.parameters import AgentParameters, ModelParameters
 from core.env_details import EnvDetails
 from intrinsic.controller import IMController
 from intrinsic.parameters import IMExperience
-from utils.helper import number_to_num_letter, normalize, to_tensor, timer
+from utils.helper import number_to_num_letter, normalize, to_tensor, timer, timer_string
 from utils.logger import DQNLogger
 
 import torch
@@ -56,7 +56,7 @@ class DQN(Agent):
         self.timestep = 0
         self.save_batch_time = datetime.now()  # init
 
-    def step(self, experience: DQNExperience) -> Union[float, None]:
+    def step(self, experience: DQNExperience) -> Union[tuple, None]:
         """Perform a learning step, if there are enough samples in memory.
         Returns the training loss and Q-value predictions."""
         # Store experience in memory
@@ -68,9 +68,9 @@ class DQN(Agent):
         # Perform learning
         if self.timestep == 0 and len(self.memory) > self.params.batch_size:
             experiences = self.memory.sample()
-            train_loss = self.learn(experiences)
-            return train_loss
-        return None
+            train_loss, im_loss = self.learn(experiences)
+            return train_loss, im_loss
+        return None, None
 
     def act(self, state: torch.Tensor, epsilon: float) -> int:
         """
@@ -94,9 +94,10 @@ class DQN(Agent):
             return np.argmax(action_values.cpu().numpy()).item()
         return random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences: tuple) -> float:
+    def learn(self, experiences: tuple) -> tuple:
         """Updates the network parameters. Returns the training loss and average return."""
         states, actions, rewards, next_states, dones = experiences
+        im_loss = None
 
         # Get max predicted Q-value from target network
         q_targets_next = self.target_network(next_states).detach().max(1)[0].unsqueeze(1)
@@ -119,7 +120,7 @@ class DQN(Agent):
 
         # Add intrinsic loss
         if self.im_method is not None:
-            loss = self.im_method.module.compute_loss(im_exp, loss)
+            loss, im_loss = self.im_method.module.compute_loss(im_exp, loss)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -128,7 +129,7 @@ class DQN(Agent):
         # Update target network
         self.__soft_update()
 
-        return loss.item()
+        return loss.item(), im_loss
 
     def __soft_update(self) -> None:
         """
@@ -166,7 +167,7 @@ class DQN(Agent):
                 # Initialize state and score
                 score = 0
                 state = self.env.reset()
-                actions, train_losses = [], []
+                actions, train_losses, im_losses = [], [], []
 
                 # Iterate over timesteps
                 for t in range(self.params.max_timesteps):
@@ -176,7 +177,7 @@ class DQN(Agent):
 
                     # Perform learning
                     exp = DQNExperience(state.cpu(), action, reward, normalize(next_state), done)
-                    train_loss = self.step(exp)
+                    train_loss, im_loss = self.step(exp)
 
                     # Update state and score
                     state = next_state
@@ -192,12 +193,19 @@ class DQN(Agent):
                     if train_loss is not None:
                         train_losses.append(train_loss)
 
+                    if im_loss is not None:
+                        im_losses.append(im_loss)
+
                 # Log episodic metrics
                 self.log_data(
                     ep_scores=score,
                     actions=Counter(actions),
                     train_losses=train_losses[-1]
                 )
+
+                # Add intrinsic loss to logger if available
+                if self.im_method is not None:
+                    self.log_data(intrinsic_losses=im_losses[-1].item())
 
                 # Decrease epsilon
                 eps = max(self.params.eps_end, self.params.eps_decay * eps)
@@ -223,7 +231,14 @@ class DQN(Agent):
         if first_episode or last_episode or i_episode % print_every == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)  # 1000 -> 1K
             ep_total_idx, ep_total_letter = number_to_num_letter(num_episodes)
+            time_taken = (datetime.now() - self.save_batch_time)
 
             print(f'({ep_idx:.1f}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
-            print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])}, '
-                  f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f}')
+            print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])},  '
+                  f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f},  ', end='')
+
+            if self.im_method is not None:
+                print(f'{self.im_type.title()} Loss: {self.logger.intrinsic_losses[i_episode - 1]:.5f},  ', end='')
+
+            print(timer_string(time_taken, 'Time taken:'))
+            self.save_batch_time = datetime.now()  # Reset

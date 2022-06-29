@@ -72,6 +72,7 @@ class RainbowDQN(Agent):
         Returns the steps average return and training loss."""
         # Get samples from buffer
         samples = self.buffer.sample()
+        im_loss = None
 
         # Calculate N-step returns
         returns = torch.matmul(samples['rewards'].cpu(), self.discount_scaling)
@@ -99,7 +100,7 @@ class RainbowDQN(Agent):
 
         # Add intrinsic loss
         if self.im_method is not None:
-            loss = self.im_method.module.compute_loss(im_exp, loss)
+            loss, im_loss = self.im_method.module.compute_loss(im_exp, loss)
 
         self.optimizer.zero_grad()
         loss.backward()
@@ -114,7 +115,7 @@ class RainbowDQN(Agent):
         # Update buffer priorities
         self.buffer.update_priorities(samples['priority_indices'], loss.detach())
         avg_return = returns.mean().item()
-        return avg_return, loss.item()
+        return avg_return, loss.item(), im_loss
 
     def compute_double_q_probs(self, next_states: torch.Tensor) -> torch.Tensor:
         """Computes the Double-Q probabilities for the best actions obtained from the local network."""
@@ -186,6 +187,7 @@ class RainbowDQN(Agent):
                 state = self.env.reset()  # Initialize state
                 score = 0.
                 avg_returns, train_losses = [], []
+                im_losses = []
 
                 # Iterate over timesteps
                 for timestep in range(self.params.max_timesteps):
@@ -204,11 +206,14 @@ class RainbowDQN(Agent):
 
                         # Learn every few timesteps
                         if timestep % self.params.learn_frequency == 0:
-                            avg_return, train_loss = self.learn()
+                            avg_return, train_loss, im_loss = self.learn()
 
                             # Add items to lists
                             avg_returns.append(avg_return)
                             train_losses.append(train_loss)
+
+                            if im_loss is not None:
+                                im_losses.append(im_loss)
 
                     # Update target network every few timesteps
                     if timestep % self.params.update_steps == 0:
@@ -231,6 +236,10 @@ class RainbowDQN(Agent):
                     avg_returns=avg_returns[-1],
                     train_losses=train_losses[-1]
                 )
+
+                # Add intrinsic loss to logger if available
+                if self.im_method is not None:
+                    self.log_data(intrinsic_losses=im_losses[-1].item())
 
                 # Display output and save model
                 model_name = f'rainbow{self.im_type}' if self.im_type is not None else 'rainbow'
@@ -266,7 +275,11 @@ class RainbowDQN(Agent):
             time_taken = (datetime.now() - self.save_batch_time)
 
             print(f'({ep_idx:.1f}{ep_letter}/{int(ep_total_idx)}{ep_total_letter})  ', end='')
-            print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])},  ',
+            print(f'Episode Score: {int(self.logger.ep_scores[i_episode-1])},  '
                   f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f},  ', end='')
+
+            if self.im_method is not None:
+                print(f'{self.im_type.title()} Loss: {self.logger.intrinsic_losses[i_episode - 1]:.5f},  ', end='')
+
             print(timer_string(time_taken, 'Time taken:'))
             self.save_batch_time = datetime.now()  # Reset

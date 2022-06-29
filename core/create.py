@@ -250,7 +250,7 @@ class SetModels:
         elif self.model_type == ValidModels.RAINBOW.value:
             return self.__create_rainbow_dqn(im_type)
         elif self.model_type == ValidModels.PPO.value:
-            return self.__create_ppo()
+            return self.__create_ppo(im_type)
 
     def __create_im_params(self, im_type: str) -> IMParameters:
         """Creates a set of intrinsic motivation parameters based on the given type."""

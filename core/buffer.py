@@ -380,12 +380,13 @@ class RolloutBuffer:
     """
 
     def __init__(self, size: int, num_envs: int, env_input_shape: tuple, action_shape: tuple) -> None:
-        self.keys = ['states', 'actions', 'rewards', 'dones', 'log_probs', 'state_values']
+        self.keys = ['states', 'actions', 'rewards', 'dones', 'log_probs', 'state_values', 'next_states']
         self.size = size
         self.num_envs = num_envs
         self.env_input_shape = env_input_shape
         self.action_shape = action_shape
         self.states = None
+        self.next_states = None
         self.actions = None
 
         self.reset()
@@ -396,17 +397,15 @@ class RolloutBuffer:
             if key not in self.keys:
                 raise ValueError(f"Invalid key! Available keys: '{self.keys}'.")
 
-            if key == 'next_state':
-                getattr(self, key)[0] = val
-            else:
-                getattr(self, key)[step] = val
+            getattr(self, key)[step] = val
 
     def reset(self) -> None:
         """Resets keys to placeholder values."""
         self.states = torch.zeros((self.size, self.num_envs) + self.env_input_shape)
+        self.next_states = torch.zeros((self.size, self.num_envs) + self.env_input_shape)
         self.actions = torch.zeros((self.size, self.num_envs) + self.action_shape)
 
-        predefined_keys = ['states', 'actions']
+        predefined_keys = ['states', 'next_states', 'actions']
         for key in self.keys:
             if key not in predefined_keys:
                 setattr(self, key, torch.zeros((self.size, self.num_envs)))
@@ -424,7 +423,7 @@ class RolloutBuffer:
         """
         data = []
         for key in keys:
-            if key == 'states':
+            if key == 'states' or key == 'next_states':
                 samples = getattr(self, key).reshape((-1,) + self.env_input_shape)
             elif key == 'actions':
                 samples = getattr(self, key).reshape((-1,) + self.action_shape)

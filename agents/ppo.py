@@ -8,6 +8,7 @@ from core.buffer import RolloutBuffer
 from core.env_details import EnvDetails
 from core.parameters import ModelParameters, PPOParameters
 from intrinsic.controller import IMController
+from intrinsic.parameters import IMExperience
 from utils.helper import to_tensor, normalize, number_to_num_letter, timer, timer_string
 from utils.logger import PPOLogger
 
@@ -78,7 +79,7 @@ class PPO(Agent):
     def compute_rtgs_and_advantages(self) -> tuple:
         """Computes advantages using rewards-to-go (rtgs/returns)."""
         # Get rollouts and initialize rtgs
-        samples = self.buffer.sample(['states', 'dones', 'rewards', 'state_values'])
+        samples = self.buffer.sample(['states', 'dones', 'rewards', 'state_values', 'actions'])
         rtgs = torch.zeros_like(samples.rewards)  # Returns (rewards-to-go)
 
         # Get next_state_value
@@ -126,6 +127,7 @@ class PPO(Agent):
             self.add_to_buffer(
                 step=i_rollout,
                 states=state.cpu(),
+                next_states=to_tensor(next_state),
                 actions=preds['action'],
                 rewards=torch.Tensor(reward),
                 dones=torch.Tensor(done),
@@ -143,6 +145,7 @@ class PPO(Agent):
         """Performs agent learning."""
         kls, actions = [], []
         policy_losses, value_losses, entropy_losses, total_losses = [], [], [], []
+        im_losses = []
 
         # Calculate advantages
         rtgs, advantages = self.compute_rtgs_and_advantages()
@@ -151,7 +154,7 @@ class PPO(Agent):
         rtgs, advantages = rtgs.reshape(-1), advantages.reshape(-1)
 
         # Get rollout batches from buffer
-        data_batch = self.buffer.sample_batch(['states', 'actions', 'log_probs', 'state_values'])
+        data_batch = self.buffer.sample_batch(['states', 'actions', 'log_probs', 'state_values', 'next_states'])
         batch_indices = np.arange(self.batch_size)
 
         # Iterate over update steps
@@ -176,10 +179,25 @@ class PPO(Agent):
                 approx_kl = (-log_ratio).mean()  # Debugging variable
                 mini_returns, mini_state_values = rtgs[mini_batch_indices], data_batch.state_values[mini_batch_indices]
 
+                # Add intrinsic reward
+                if self.im_method is not None:
+                    im_exp = IMExperience(
+                        states,
+                        data_batch.next_states[mini_batch_indices].to(self.device),
+                        data_batch.actions[mini_batch_indices].to(torch.long).to(self.device)
+                    )
+                    im_return = normalize(self.im_method.module.compute_return(im_exp)).squeeze().cpu()
+                    mini_returns += im_return
+
                 policy_loss = self.clip_surrogate(ratio, mini_batch_advantages).mean()
                 value_loss = self.clipped_value_loss(new_state_values.cpu(), mini_returns, mini_state_values)
                 entropy_loss = y_preds['entropy'].mean()  # Encourages agent exploration
                 loss = policy_loss - self.params.entropy_coef * entropy_loss + value_loss * self.params.value_loss_coef
+
+                # Add intrinsic loss
+                if self.im_method is not None:
+                    loss, im_loss = self.im_method.module.compute_loss(im_exp, loss)
+                    im_losses.append(im_loss.detach().item())
 
                 # Back-propagate loss
                 self.optimizer.zero_grad()
@@ -205,6 +223,10 @@ class PPO(Agent):
             avg_returns=self._calc_mean(rtgs),
             actions=self._count_actions(actions)
         )
+
+        # Add intrinsic loss to logger if available
+        if self.im_method is not None:
+            self.log_data(intrinsic_losses=self._calc_mean(im_losses))
 
     def clipped_value_loss(self, new_state_value: torch.Tensor, batch_returns: torch.Tensor,
                            batch_state_values: torch.Tensor) -> torch.Tensor:
@@ -258,9 +280,10 @@ class PPO(Agent):
                 self.learn()
 
                 # Display output and save model
+                model_name = f'ppo{self.im_type}' if self.im_type is not None else 'ppo'
                 self.__output_progress(num_updates, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
-                                           filename=f'ppo_rollout{self.params.rollout_size}'
+                                           filename=f'{model_name}_rollout{self.params.rollout_size}'
                                                     f'_agents{self.params.num_envs}',
                                            extra_data={
                                                'network': self.network.state_dict(),
@@ -286,6 +309,10 @@ class PPO(Agent):
                   f'Policy Loss: {self.logger.policy_losses[i_episode-1]:.5f},  '
                   f'Value Loss: {self.logger.value_losses[i_episode-1]:.5f},  '
                   f'Entropy Loss: {self.logger.entropy_losses[i_episode-1]:.5f},  ', end='')
+
+            if self.im_method is not None:
+                print(f'{self.im_type.title()} Loss: {self.logger.intrinsic_losses[i_episode - 1]:.5f},  ', end='')
+
             print(timer_string(time_taken, 'Time taken:'))
             self.save_batch_time = datetime.now()  # Reset
 

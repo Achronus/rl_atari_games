@@ -56,7 +56,7 @@ class Curiosity(IMMethod):
         inverse_loss = self.params.inverse_loss(pred_actions, actions).unsqueeze(1)
         return forward_loss, inverse_loss
 
-    def compute_loss(self, experience: IMExperience, model_loss: torch.Tensor) -> torch.Tensor:
+    def compute_loss(self, experience: IMExperience, model_loss: torch.Tensor) -> tuple:
         """Computes the total loss using the curiosity and model losses."""
         forward_loss, inverse_loss = self.get_loss(experience)
         curiosity_loss = (1 - self.params.comparison_weight) * inverse_loss.flatten().mean()
@@ -64,7 +64,7 @@ class Curiosity(IMMethod):
         curiosity_loss = curiosity_loss.sum() / curiosity_loss.flatten().shape[0]
 
         loss = curiosity_loss + model_loss.mean()
-        return loss
+        return loss, curiosity_loss
 
     def compute_return(self, experience: IMExperience) -> torch.Tensor:
         """Computes the intrinsic reward signal for curiosity."""
