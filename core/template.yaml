@@ -23,6 +23,7 @@ dqn:
   core:
     tau: 0.1
     max_timesteps: 1
+    target_update_steps: 1
   vanilla:
     eps_start: 1.0
     eps_end: 0.1

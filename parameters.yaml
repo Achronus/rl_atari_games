@@ -13,7 +13,7 @@ other_environments:
 ---
 core:
   utility:
-    num_episodes: 50000 # Number of episodes to train the model
+    num_episodes: 100000 # Number of episodes to train the model
     save_every: 10000 # Every number of episodes to save the model
   agent:
     gamma: 0.99 # Discount factor
@@ -28,14 +28,15 @@ dqn:
   core:
     tau: 0.001 # Soft updater for target network
     max_timesteps: 1000 # Maximum steps before each episode ends
+    target_update_steps: 1000 # Frequency for updating the target network
   vanilla:
     eps_start: 1.0 # Initial epsilon
-    eps_end: 0.01 # Greedy epsilon threshold
+    eps_end: 0.1 # Greedy epsilon threshold
     eps_decay: 0.995 # Epsilon decay rate
   rainbow:
     n_steps: 3 # Number of steps for multi-step learning
     replay_period: 100 # Number of transitions before learning begins
-    learn_frequency: 4 # Number of timesteps to perform agent learning
+    learn_frequency: 4 # Number of timesteps to perform agent learning (repeat action)
     reward_clip: 0.1 # Number for maximum reward bounds
     n_atoms: 51 # Number of atoms (distributions)
     v_min: -10 # Minimum size of the atoms

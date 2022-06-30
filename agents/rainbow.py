@@ -168,12 +168,14 @@ class RainbowDQN(Agent):
         :param save_count (int) - the number of episodes before saving the model
         """
         # Output info to console
-        buffer_idx, buffer_letter = number_to_num_letter(self.buffer.capacity)
-        timesteps_idx, timesteps_letter = number_to_num_letter(self.params.max_timesteps)
-        self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, '
+        buffer_idx, buffer_let = number_to_num_letter(self.buffer.capacity)
+        timesteps_idx, timesteps_let = number_to_num_letter(self.params.max_timesteps)
+        target_steps_idx, target_steps_let = number_to_num_letter(self.params.target_update_steps)
+        self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_let.lower()}, '
                                            f'batch size: {self.buffer.batch_size}, '
-                                           f'max timesteps: {int(timesteps_idx)}{timesteps_letter.lower()}, '
+                                           f'max timesteps: {int(timesteps_idx)}{timesteps_let.lower()}, '
                                            f'num network updates: {self.params.update_steps}, '
+                                           f'target network update steps: {int(target_steps_idx)}{target_steps_let.lower()}, '
                                            f'replay period: {self.params.replay_period}, '
                                            f'intrinsic method: {self.im_type}.')
 
@@ -215,20 +217,20 @@ class RainbowDQN(Agent):
                             if im_loss is not None:
                                 im_losses.append(im_loss)
 
-                    # Update target network every few timesteps
-                    if timestep % self.params.update_steps == 0:
-                        self.__soft_update_target_network()
-
-                    # Sample new noise every replay period
-                    if timestep % self.params.replay_period == 0:
-                        self.local_network.sample_noise(self.device)
-
                     # Update state
                     state = next_state
 
                     # Check if finished
                     if done:
                         break
+
+                # Update target network every few timesteps
+                if i_episode % self.params.target_update_steps == 0:
+                    self.__update_target_network()
+
+                # Sample new noise every replay period
+                if i_episode % self.params.replay_period == 0:
+                    self.local_network.sample_noise(self.device)
 
                 # Add episode data to logger
                 self.log_data(
@@ -251,18 +253,18 @@ class RainbowDQN(Agent):
                                            extra_data={
                                                'local_network': self.local_network.state_dict(),
                                                'target_network': self.target_network.state_dict(),
+                                               'network_type': self.local_network.__class__.__name__,
                                                'optimizer': self.optimizer,
-                                               'buffer_params': self.buffer_params
+                                               'buffer_params': self.buffer_params,
+                                               'im_type': self.im_type
                                            })
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
-    def __soft_update_target_network(self) -> None:
+    def __update_target_network(self) -> None:
         """
-        Performs a soft update of the target networks parameters.
-        Formula: θ_target = Τ * θ_local + (1 - Τ) * θ_target
+        Performs a hard update of the target networks parameters.
         """
-        for target, local in zip(self.target_network.parameters(), self.local_network.parameters()):
-            target.detach().copy_(self.params.tau * local.detach() + (1.0 - self.params.tau) * target.detach())
+        self.target_network.load_state_dict(self.local_network.state_dict())
 
     def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
         """Provides a progress update on the model's training to the console."""

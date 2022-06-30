@@ -2,59 +2,92 @@ import os
 import tarfile
 from typing import Union
 
+from agents._agent import Agent
 from agents.dqn import DQN
 from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
+from core.exceptions import MissingCheckpointKeyError, InvalidModelTypeError
 from core.parameters import ModelParameters
 from core.enums import CoreCheckpointParams
-from models._base import BaseModel
 from utils.logger import Logger
+
+# Keep for globals() call
+from models._base import BaseModel
+from models.actor_critic import ActorCritic
+from models.dueling import CategoricalNoisyDueling
 
 import torch
 
 
 class DataLoader:
     """A class dedicated to loading model data."""
-    def __init__(self, filename: str, device: str) -> None:
+    def __init__(self, filename: str, model_type: str, device: str) -> None:
         self.filename = filename
+        self.model_type = model_type
+        self.filepath = f'saved_models/{self.filename}'
         self.device = device
         self.cp_data = self.get_checkpoint_data()
 
     def load_dqn_model(self) -> DQN:
         """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
-        dqn = DQN(self.cp_data['env_details'], self.cp_data['model_params'], self.cp_data['params'],
-                  device=self.device, seed=self.cp_data['seed'])
+        params = self.__set_params()
+        dqn = self.__valid_model_check(DQN, params)
         dqn.local_network.load_state_dict(self.cp_data['other'].get('local_network'), strict=False)
         dqn.target_network.load_state_dict(self.cp_data['other'].get('target_network'), strict=False)
         return dqn
 
     def load_rdqn_model(self) -> RainbowDQN:
         """Load a DQN model's parameters from the given filename. Files must be stored within a saved_models folder."""
-        rdqn = RainbowDQN(self.cp_data['env_details'], self.cp_data['model_params'], self.cp_data['params'],
-                          self.cp_data['other'].get('buffer_params'), device=self.device, seed=self.cp_data['seed'])
+        params = self.__set_params()
+        params.update(buffer_params=self.cp_data['other'].get('buffer_params'))
+        rdqn = self.__valid_model_check(RainbowDQN, params)
         rdqn.local_network.load_state_dict(self.cp_data['other'].get('local_network'), strict=False)
         rdqn.target_network.load_state_dict(self.cp_data['other'].get('target_network'), strict=False)
         return rdqn
 
     def load_ppo_model(self) -> PPO:
         """Load a PPO model's parameters from the given filename. Files must be stored within a saved_models folder."""
-        ppo = PPO(self.cp_data['env_details'], self.cp_data['model_params'], self.cp_data['params'],
-                  device=self.device, seed=self.cp_data['seed'])
+        params = self.__set_params()
+        ppo = self.__valid_model_check(PPO, params)
         ppo.network.load_state_dict(self.cp_data['other'].get('network'), strict=False)
         return ppo
 
+    def __valid_model_check(self, agent: Agent, params: dict) -> Agent:
+        try:
+            return agent(**params)
+        except AttributeError:
+            raise InvalidModelTypeError(f"'{self.model_type}' does not match '{self.filepath}' architecture! "
+                                        f"Are you using the correct file?")
+
+    def __set_params(self) -> dict:
+        """Sets the model parameters dictionary that is passed into the model to initialize it."""
+        return dict(
+            env_details=self.cp_data['env_details'],
+            model_params=self.cp_data['model_params'],
+            params=self.cp_data['params'],
+            device=self.device,
+            seed=self.cp_data['seed'],
+            im_type=self.cp_data['other']['im_type']
+        )
+
     def get_checkpoint_data(self) -> dict:
         """Gets the checkpoint data, creates the respective objects and return the info as a dictionary."""
-        checkpoint = torch.load(f'saved_models/{self.filename}.pt', map_location=self.device)
+        checkpoint = torch.load(self.filepath, map_location=self.device)
         env_details = checkpoint.get('env_details')
         core_keys = [item.value for item in CoreCheckpointParams]
+
+        try:
+            model = globals()[checkpoint.get(CoreCheckpointParams.NETWORK_TYPE.value)]
+        except KeyError:
+            raise MissingCheckpointKeyError(f"'{CoreCheckpointParams.NETWORK_TYPE.value}' key is missing from "
+                                            f"'{self.filepath}'! Are you using the correct file?")
 
         return {
             CoreCheckpointParams.ENV_DETAILS.value: env_details,
             CoreCheckpointParams.PARAMS.value: checkpoint.get('params'),
             CoreCheckpointParams.SEED.value: checkpoint.get('seed'),
             CoreCheckpointParams.MODEL_PARAMS.value: ModelParameters(
-                network=BaseModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
+                network=model(input_shape=env_details.input_shape, n_actions=env_details.n_actions),
                 optimizer=checkpoint.get('optimizer'),
                 loss_metric=checkpoint.get('loss_metric')
             ),

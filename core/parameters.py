@@ -40,6 +40,7 @@ class CoreDQNParameters(AgentParameters):
     tau: float = 0.001  # Soft updater for target network
     update_steps: int = 4  # How often to update the network
     max_timesteps: int = 1000  # Max before episode end
+    target_update_steps: int = 1000  # Frequency for updating the target network
 
     assert isinstance(gamma, float), "'gamma' must be a float value!"
     assert isinstance(tau, float), "'tau' must be a float value!"
@@ -51,7 +52,7 @@ class DQNParameters(CoreDQNParameters):
     buffer_size: int = 10  # Size of memory buffer
     batch_size: int = 1  # Buffer mini-batch size
     eps_start: float = 1.0  # Initial epsilon
-    eps_end: float = 0.01  # Greedy epsilon threshold
+    eps_end: float = 0.1  # Greedy epsilon threshold
     eps_decay: float = 0.995  # Epsilon decay rate
 
 

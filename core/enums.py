@@ -11,6 +11,7 @@ class CoreCheckpointParams(Enum):
     PARAMS = 'params'
     SEED = 'seed'
     MODEL_PARAMS = 'model_params'
+    NETWORK_TYPE = 'network_type'
 
 
 class OptionalParams(Enum):

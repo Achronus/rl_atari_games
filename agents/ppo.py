@@ -287,8 +287,10 @@ class PPO(Agent):
                                                     f'_agents{self.params.num_envs}',
                                            extra_data={
                                                'network': self.network.state_dict(),
+                                               'network_type': self.network.__class__.__name__,
                                                'optimizer': self.optimizer,
-                                               'loss_metric': self.loss
+                                               'loss_metric': self.loss,
+                                               'im_type': self.im_type
                                            })
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 

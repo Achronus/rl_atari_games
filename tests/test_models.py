@@ -3,6 +3,7 @@ import os
 
 import pytest
 
+from core.exceptions import MissingCheckpointKeyError, InvalidModelTypeError
 from models.actor_critic import ActorCritic
 from models._base import BaseModel
 from models.dueling import CategoricalNoisyDueling
@@ -51,6 +52,7 @@ def test_load_model_invalid_model_type() -> None:
             file.close()
 
         model = load_model('test', device='cpu', model_type='a2c')
+        os.remove(filepath)
         assert False
     except (ValueError, _pickle.UnpicklingError):
         os.remove(filepath)
@@ -61,7 +63,7 @@ def test_load_model_rqdn_invalid_model_file() -> None:
     try:
         model = load_model('dqn_example', device='cpu', model_type='rainbow')
         assert False
-    except AttributeError:
+    except (MissingCheckpointKeyError, InvalidModelTypeError):
         assert True
 
 
@@ -74,6 +76,7 @@ def test_load_model_dqn_invalid_file_content() -> None:
             file.close()
 
         model = load_model('test3', device='cpu', model_type='dqn')
+        os.remove(filepath)
         assert False
     except _pickle.UnpicklingError:
         os.remove(filepath)

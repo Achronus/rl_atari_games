@@ -72,7 +72,7 @@ class DQN(Agent):
             return train_loss, im_loss
         return None, None
 
-    def act(self, state: torch.Tensor, epsilon: float) -> int:
+    def act(self, state: torch.Tensor, epsilon: float = 0.1) -> int:
         """
         Returns an action for a given state based on an epsilon greedy policy.
 
@@ -126,18 +126,13 @@ class DQN(Agent):
         loss.backward()
         self.optimizer.step()
 
-        # Update target network
-        self.__soft_update()
-
         return loss.item(), im_loss
 
-    def __soft_update(self) -> None:
+    def __update_target_network(self) -> None:
         """
-        Performs a soft update of the target networks parameters.
-        Formula: θ_target = Τ * θ_local + (1 - Τ) * θ_target
+        Performs a hard update of the target networks parameters.
         """
-        for target, local in zip(self.target_network.parameters(), self.local_network.parameters()):
-            target.detach().copy_(self.params.tau * local.detach() + (1.0 - self.params.tau) * target.detach())
+        self.target_network.load_state_dict(self.local_network.state_dict())
 
     def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
         """
@@ -151,12 +146,14 @@ class DQN(Agent):
         eps = self.params.eps_start
 
         # Output info to console
-        buffer_idx, buffer_letter = number_to_num_letter(self.memory.buffer_size)
-        timesteps_idx, timesteps_letter = number_to_num_letter(self.params.max_timesteps)
-        self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_letter.lower()}, '
+        buffer_idx, buffer_let = number_to_num_letter(self.memory.buffer_size)
+        timesteps_idx, timesteps_let = number_to_num_letter(self.params.max_timesteps)
+        target_steps_idx, target_steps_let = number_to_num_letter(self.params.target_update_steps)
+        self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_let.lower()}, '
                                            f'batch size: {self.memory.batch_size}, '
-                                           f'max timesteps: {int(timesteps_idx)}{timesteps_letter.lower()}, '
+                                           f'max timesteps: {int(timesteps_idx)}{timesteps_let.lower()}, '
                                            f'num network updates: {self.params.update_steps}, '
+                                           f'target network update steps: {int(target_steps_idx)}{target_steps_let.lower()}, '
                                            f'intrinsic method: {self.im_type}')
 
         # Time training
@@ -196,6 +193,10 @@ class DQN(Agent):
                     if im_loss is not None:
                         im_losses.append(im_loss)
 
+                # Update target parameters
+                if i_episode % self.params.target_update_steps == 0:
+                    self.__update_target_network()
+
                 # Log episodic metrics
                 self.log_data(
                     ep_scores=score,
@@ -218,8 +219,10 @@ class DQN(Agent):
                                            extra_data={
                                                'local_network': self.local_network.state_dict(),
                                                'target_network': self.target_network.state_dict(),
+                                               'network_type': self.local_network.__class__.__name__,
                                                'optimizer': self.optimizer,
-                                               'loss_metric': self.loss
+                                               'loss_metric': self.loss,
+                                               'im_type': self.im_type
                                            })
         print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 

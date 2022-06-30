@@ -13,13 +13,13 @@ def load_model(filename: str, device: str, model_type: str) -> Agent:
     :param device (str) - the CUDA device to load the model onto (CPU or GPU)
     :param model_type (str) - the type of model to load (DQN or PPO)
     """
-    file = filename if filename[-3:] == '.pt' else f'{filename}.pt'
+    filename = filename if filename[-3:] == '.pt' else f'{filename}.pt'
     assert os.path.exists('saved_models'), "'saved_models' folder does not exist! Have you created it?"
-    assert os.path.exists(f'saved_models/{file}'), f"'{file}' does not exist in the 'saved_models' folder!"
+    assert os.path.exists(f'saved_models/{filename}'), f"'{filename}' does not exist in the 'saved_models' folder!"
 
     model = model_type.lower()
     valid_models = [item.value for item in ValidModels]
-    loader = DataLoader(filename, device)
+    loader = DataLoader(filename, model_type, device)
 
     # Load desired model
     if model == ValidModels.DQN.value:
