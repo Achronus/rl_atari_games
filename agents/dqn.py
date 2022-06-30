@@ -107,7 +107,7 @@ class DQN(Agent):
 
         # Add intrinsic reward
         if self.im_method is not None:
-            im_exp = IMExperience(states, next_states, actions)
+            im_exp = IMExperience(states, next_states, actions.squeeze())
             im_return = normalize(self.im_method.module.compute_return(im_exp))
             q_targets += im_return
             q_targets = q_targets.detach()

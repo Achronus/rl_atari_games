@@ -22,9 +22,9 @@ class BaseModel(nn.Module):
         self.conv = nn.Sequential(
             nn.Conv2d(in_channels=input_shape[0], out_channels=32, kernel_size=8, stride=4),  # 128x128x4 -> 31x31x32
             nn.ReLU(),
-            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2),  # 31x31x32 -> 15x15x64
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=4, stride=2),  # 31x31x32 -> 14x14x64
             nn.ReLU(),
-            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),  # 15x15x64 -> 13x13x64
+            nn.Conv2d(in_channels=64, out_channels=64, kernel_size=3, stride=1),  # 14x14x64 -> 12x12x64
             nn.ReLU()
         )
         conv_out_size = self.get_conv_size(input_shape)
@@ -39,11 +39,14 @@ class BaseModel(nn.Module):
 
     def get_conv_size(self, input_shape: tuple) -> int:
         """Returns the convolutional layers output size."""
-        out = self.conv(torch.zeros(1, *input_shape))
+        if len(input_shape) < 3:
+            out = self.conv(torch.zeros(1, *input_shape))
+        else:
+            out = self.conv(torch.zeros(*input_shape))
         return int(np.prod(out.size()))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Propagates the features forward through the network."""
-        conv_out = self.conv(x).view(x.size(0), -1)  # 13x13x64 -> 10,816
+        conv_out = self.conv(x).view(x.size(0), -1)  # 12x12x64 -> 9,216
         fc_out = self.fc(conv_out)
         return self.out(fc_out)

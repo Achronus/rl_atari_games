@@ -16,7 +16,7 @@ def experience() -> namedtuple:
 
 @pytest.fixture
 def rollout_buffer() -> RolloutBuffer:
-    return RolloutBuffer(size=1, num_agents=1, env_input_shape=(4, 128, 128), action_shape=())
+    return RolloutBuffer(size=1, num_envs=1, env_input_shape=(4, 128, 128), action_shape=())
 
 
 @pytest.fixture
@@ -29,6 +29,11 @@ def priority_buffer() -> PrioritizedReplayBuffer:
     params = BufferParameters(buffer_size=10, batch_size=1, priority_exponent=0.1,
                               priority_weight=0.5, input_shape=(10, 10))
     return PrioritizedReplayBuffer(params, 3, 4, 'cpu', RDQNLogger())
+
+
+@pytest.fixture
+def test_tensor(rollout_buffer) -> torch.Tensor:
+    return torch.ones((rollout_buffer.size, rollout_buffer.num_envs))
 
 
 def test_replay_buffer_add_valid(experience) -> None:
@@ -67,22 +72,21 @@ def test_rollout_buffer_add_invalid_value(rollout_buffer) -> None:
         assert True
 
 
-def test_rollout_buffer_add_valid(rollout_buffer) -> None:
-    tensor = torch.ones((rollout_buffer.size, rollout_buffer.num_agents))
-    rollout_buffer.add(0, actions=tensor)
-    assert rollout_buffer.actions == tensor
+def test_rollout_buffer_add_valid(rollout_buffer, test_tensor) -> None:
+    rollout_buffer.add(0, actions=test_tensor)
+    assert rollout_buffer.actions == test_tensor
 
 
-def test_rollout_buffer_sample_valid(rollout_buffer) -> None:
-    tensor = torch.zeros((rollout_buffer.size, rollout_buffer.num_agents))
+def test_rollout_buffer_sample_valid(rollout_buffer, test_tensor) -> None:
+    rollout_buffer.add(0, actions=test_tensor)
     sample = rollout_buffer.sample(['actions'])
-    assert sample.actions == tensor
+    assert sample.actions == test_tensor
 
 
-def test_rollout_buffer_sample_batch_valid(rollout_buffer) -> None:
-    tensor = torch.zeros((rollout_buffer.size, rollout_buffer.num_agents)).reshape(-1)
+def test_rollout_buffer_sample_batch_valid(rollout_buffer, test_tensor) -> None:
+    rollout_buffer.add(0, actions=test_tensor)
     batch = rollout_buffer.sample_batch(['actions'])
-    assert batch.actions == tensor
+    assert batch.actions == test_tensor.reshape(-1)
 
 
 def test_sum_tree_add_valid(experience, sum_tree) -> None:
@@ -155,6 +159,3 @@ def test_priority_buffer_update_priorities_valid(priority_buffer) -> None:
         assert True
     except (RuntimeError, ValueError):
         assert False
-
-
-

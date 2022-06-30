@@ -10,7 +10,9 @@ class IMController:
     """
     def __init__(self, im_type: str, params: IMParameters, device: str) -> None:
         valid_types = list(IMType.__members__.keys())
-        assert im_type in valid_types, f"'{im_type}' does not exist! Must be one of: '{valid_types}'."
+        if im_type not in valid_types:
+            raise ValueError(f"'{im_type}' does not exist! Must be one of: '{valid_types}'.")
+
         self.im_type = im_type
         self.im_method = IMType[im_type].value
 

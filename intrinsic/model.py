@@ -47,29 +47,32 @@ class CuriosityModel(BaseModel):
         x = torch.cat((encoded_state, encoded_next_state), dim=1)
         x = self.fc_in(x)
         x = self.fc_core(x)
-        return F.softmax(self.out(x), dim=1)
+        return F.softmax(self.out(x), dim=1)  # shape -> (batch_size, n_actions)
 
-    def forward(self, state: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
-        """Compute the prediction error (curiosity signal)."""
+    def forward(self, encoded_state: torch.Tensor, actions: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the prediction error (curiosity signal).
+
+        :param encoded_state (torch.Tensor) - an encoded state, shape -> (batch_size, flatten_size)
+        :param actions (torch.Tensor) - a batch of actions to take, shape -> (batch_size)
+        """
         # Create matrix of action probabilities -> action position = 1, else 0
         actions_ = torch.zeros(actions.shape[0], self.n_actions, device=self.device)  # shape -> (batch_size, n_actions)
-        indices = torch.stack((torch.arange(actions.shape[0], device=self.device), actions.squeeze()), dim=0).tolist()
-        actions_[indices] = 1.
+        indices = torch.stack((torch.arange(actions.shape[0], device=self.device), actions), dim=0).tolist()
+        actions_[indices] = 1.  # one-hot encoded matrix
 
         # Combine state and matrix of actions and pass through dense layers
-        x = torch.cat((state, actions_), dim=1)
+        x = torch.cat((encoded_state, actions_), dim=1)  # shape -> (batch_size, flatten_size + n_actions)
         x = self.state_pred_in(x)
         x = self.fc_core(x)
-        return self.state_pred_out(x)
+        return self.state_pred_out(x)  # shape -> (batch_size, flatten_size)
 
 
 class EmpowermentModel(BaseModel):
     """A neural network for the empowerment intrinsic motivation method. Based on the X paper:
 
-
-    Parameters:
-        input_shape (tuple[int]) - image input dimensions (including batch size at first dimension)
-        n_actions (int) - number of possible actions in the environment
+    :param input_shape (tuple[int]) - image input dimensions (including batch size at first dimension)
+    :param n_actions (int) - number of possible actions in the environment
     """
     def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super().__init__(input_shape, n_actions)
@@ -78,10 +81,8 @@ class EmpowermentModel(BaseModel):
 class SurpriseBasedModel(BaseModel):
     """A neural network for the surprise-based intrinsic motivation method. Based on the X paper:
 
-
-    Parameters:
-        input_shape (tuple[int]) - image input dimensions (including batch size at first dimension)
-        n_actions (int) - number of possible actions in the environment
+    :param input_shape (tuple[int]) - image input dimensions (including batch size at first dimension)
+    :param n_actions (int) - number of possible actions in the environment
     """
     def __init__(self, input_shape: tuple, n_actions: int) -> None:
         super().__init__(input_shape, n_actions)

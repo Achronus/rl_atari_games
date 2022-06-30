@@ -181,3 +181,7 @@ def test_rainbow_train_valid(rdqn) -> None:
         assert True
     except (RuntimeError, TypeError, ValueError):
         assert False
+
+
+def test_rdqn_save_file_env_name_valid(rdqn) -> None:
+    assert rdqn.save_file_env_name() == 'SpaInv'

@@ -63,7 +63,7 @@ class Curiosity(IMMethod):
         curiosity_loss += self.params.comparison_weight * forward_loss.flatten().mean()
         curiosity_loss = curiosity_loss.sum() / curiosity_loss.flatten().shape[0]
 
-        loss = curiosity_loss + model_loss.mean()
+        loss = curiosity_loss + model_loss
         return loss, curiosity_loss
 
     def compute_return(self, experience: IMExperience) -> torch.Tensor:
