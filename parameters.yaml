@@ -28,7 +28,6 @@ dqn:
   core:
     tau: 0.001 # Soft updater for target network
     max_timesteps: 1000 # Maximum steps before each episode ends
-    target_update_steps: 1000 # Frequency for updating the target network
   vanilla:
     eps_start: 1.0 # Initial epsilon
     eps_end: 0.1 # Greedy epsilon threshold
@@ -50,8 +49,8 @@ dqn:
 ---
 ppo:
   loss_clip: 0.1 # Value for surrogate clipping
-  rollout_size: 100 # Number of samples to train on
-  num_envs: 8 # Number of environments used during training
+  rollout_size: 10 # Number of samples to train on
+  num_envs: 4 # Number of environments used during training
   num_mini_batches: 4 # Number of mini-batches during training
   entropy_coef: 0.01 # Coefficient for regularisation (lambda)
   value_loss_coef: 0.5 # Coefficient for decreasing value loss

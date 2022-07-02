@@ -41,7 +41,7 @@ class DQNLogger(Logger):
 class PPOLogger(Logger):
     """A PPO logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['actions', 'avg_rewards', 'avg_returns', 'policy_losses',
+        self.keys = ['actions', 'avg_returns', 'avg_rewards', 'policy_losses',
                      'value_losses', 'entropy_losses', 'total_losses',
                      'approx_kl', 'intrinsic_losses']
         super().__init__(self.keys)

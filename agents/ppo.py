@@ -121,6 +121,7 @@ class PPO(Agent):
 
             preds = self.act(action_probs)  # Get an action
             next_state, reward, done, info = self.envs.step(preds['action'].numpy())  # Take an action
+            rewards.append(reward)
             reward = np.clip(reward, a_min=-1, a_max=1)  # clip reward
 
             # Add rollout to buffer
@@ -135,11 +136,9 @@ class PPO(Agent):
                 state_values=state_values.flatten().cpu()
             )
 
-            # Add data to list
-            rewards.append(reward)
-
         # Log info
-        self.log_data(avg_rewards=self._calc_mean(rewards))
+        rewards = np.stack(rewards)
+        self.log_data(avg_rewards=rewards.mean(axis=1).mean().item())
 
     def learn(self) -> None:
         """Performs agent learning."""
@@ -305,15 +304,16 @@ class PPO(Agent):
             time_taken = (datetime.now() - self.save_batch_time)
 
             print(f'({ep_idx:.1f}{ep_letter}/{int(ep_total_idx)}{ep_total_letter}) ', end='')
-            print(f'Episodic Return: {self.logger.avg_returns[i_episode-1]:.5f},  '
-                  f'Approx KL: {self.logger.approx_kl[i_episode-1]:.5f},  '
-                  f'Total Loss: {self.logger.total_losses[i_episode-1]:.5f},  '
-                  f'Policy Loss: {self.logger.policy_losses[i_episode-1]:.5f},  '
-                  f'Value Loss: {self.logger.value_losses[i_episode-1]:.5f},  '
-                  f'Entropy Loss: {self.logger.entropy_losses[i_episode-1]:.5f},  ', end='')
+            print(f'Episode Score: {self.logger.avg_rewards[i_episode-1]:.2f},  '
+                  f'Episodic Return: {self.logger.avg_returns[i_episode-1]:.2f},  '
+                  f'Approx KL: {self.logger.approx_kl[i_episode-1]:.3f},  '
+                  f'Total Loss: {self.logger.total_losses[i_episode-1]:.3f},  '
+                  f'Policy Loss: {self.logger.policy_losses[i_episode-1]:.3f},  '
+                  f'Value Loss: {self.logger.value_losses[i_episode-1]:.3f},  '
+                  f'Entropy Loss: {self.logger.entropy_losses[i_episode-1]:.3f},  ', end='')
 
             if self.im_method is not None:
-                print(f'{self.im_type.title()} Loss: {self.logger.intrinsic_losses[i_episode - 1]:.5f},  ', end='')
+                print(f'{self.im_type.title()} Loss: {self.logger.intrinsic_losses[i_episode - 1]:.3f},  ', end='')
 
             print(timer_string(time_taken, 'Time taken:'))
             self.save_batch_time = datetime.now()  # Reset

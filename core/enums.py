@@ -1,7 +1,7 @@
 from enum import Enum
 
-from intrinsic.module import Curiosity
-from intrinsic.model import CuriosityModel
+from intrinsic.module import Curiosity, Empowerment, SurpriseBased
+from intrinsic.model import CuriosityModel, EmpowermentModel, SurpriseBasedModel
 
 
 class CoreCheckpointParams(Enum):
@@ -46,8 +46,10 @@ class IMType(Enum):
         'model': CuriosityModel
     }
     empowerment = {
-        'loss': 0
+        'module': Empowerment,
+        'model': EmpowermentModel
     }
     surprise_based = {
-        'loss': 0
+        'module': SurpriseBased,
+        'model': SurpriseBasedModel
     }
