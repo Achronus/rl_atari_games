@@ -126,13 +126,18 @@ class DQN(Agent):
         loss.backward()
         self.optimizer.step()
 
+        # Update target network
+        self.__update_target_network()
+
         return loss.item(), im_loss
 
     def __update_target_network(self) -> None:
         """
-        Performs a hard update of the target networks parameters.
+        Performs a soft update of the target networks parameters.
+        Formula: θ_target = Τ * θ_local + (1 - Τ) * θ_target
         """
-        self.target_network.load_state_dict(self.local_network.state_dict())
+        for target, local in zip(self.target_network.parameters(), self.local_network.parameters()):
+            target.data.copy_(self.params.tau * local.data + (1.0 - self.params.tau) * target.data)
 
     def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
         """
@@ -148,12 +153,10 @@ class DQN(Agent):
         # Output info to console
         buffer_idx, buffer_let = number_to_num_letter(self.memory.buffer_size)
         timesteps_idx, timesteps_let = number_to_num_letter(self.params.max_timesteps)
-        target_steps_idx, target_steps_let = number_to_num_letter(self.params.target_update_steps)
         self._initial_output(num_episodes, f'Buffer size: {int(buffer_idx)}{buffer_let.lower()}, '
                                            f'batch size: {self.memory.batch_size}, '
                                            f'max timesteps: {int(timesteps_idx)}{timesteps_let.lower()}, '
                                            f'num network updates: {self.params.update_steps}, '
-                                           f'target network update steps: {int(target_steps_idx)}{target_steps_let.lower()}, '
                                            f'intrinsic method: {self.im_type}')
 
         # Time training
@@ -192,10 +195,6 @@ class DQN(Agent):
 
                     if im_loss is not None:
                         im_losses.append(im_loss)
-
-                # Update target parameters
-                if i_episode % self.params.target_update_steps == 0:
-                    self.__update_target_network()
 
                 # Log episodic metrics
                 self.log_data(
