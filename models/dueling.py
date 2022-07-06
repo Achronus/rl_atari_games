@@ -44,13 +44,13 @@ class CategoricalNoisyDueling(BaseModel):
         value = self.value(fc_out)
 
         # Reshape to accommodate atoms
-        advantage = advantage.reshape(-1, self.n_actions, self.n_atoms)  # shape -> batch_size, n_actions, n_atoms
-        value = value.reshape(-1, 1, self.n_atoms)  # shape -> batch_size, 1, n_atoms
+        advantage = advantage.reshape(-1, self.n_actions, self.n_atoms)  # shape -> (batch_size, n_actions, n_atoms)
+        value = value.reshape(-1, 1, self.n_atoms)  # shape -> (batch_size, 1, n_atoms)
 
         # Compute Q-values
-        q = value + advantage - advantage.mean()  # shape -> batch_size, n_actions, n_atoms
+        q = value + advantage - advantage.mean()  # shape -> (batch_size, n_actions, n_atoms)
         q = F.softmax(q, dim=2)  # Probabilities of actions over atoms
-        return q
+        return q  # shape -> (batch_size, n_actions, n_atoms)
 
     def sample_noise(self, device: str) -> None:
         """Samples new noise in the NoisyLinear layers."""

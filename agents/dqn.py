@@ -6,9 +6,9 @@ from datetime import datetime
 
 from agents._agent import Agent
 from core.buffer import ReplayBuffer
+from core.enums import ValidIMMethods
 from core.parameters import AgentParameters, ModelParameters
 from core.env_details import EnvDetails
-from intrinsic.controller import IMController
 from intrinsic.parameters import IMExperience
 from utils.helper import number_to_num_letter, normalize, to_tensor, timer, timer_string
 from utils.logger import DQNLogger
@@ -30,10 +30,10 @@ class DQN(Agent):
         :param params (AgentParameters) - a data class containing DQN specific parameters
         :param device (str) - name of CUDA device ('cpu' or 'cuda:0')
         :param seed (int) - an integer for recreating results
-        :param im_type (tuple[str, IMParameters]) - indicates the type of intrinsic motivation to use with its parameters
+        :param im_type (tuple[str, IMController]) - the type of intrinsic motivation to use with its controller
         """
         self.logger = DQNLogger()
-        super().__init__(env_details, params, device, seed, self.logger)
+        super().__init__(env_details, params, device, seed, self.logger, im_type)
 
         self.env = env_details.make_env('dqn')
         self.action_size = env_details.n_actions
@@ -46,14 +46,8 @@ class DQN(Agent):
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
 
-        self.im_type = None
-        self.im_method = None
-
-        if im_type is not None:
-            self.im_type = im_type[0]
-            self.im_method = IMController(im_type[0], im_type[1], self.device)
-
         self.timestep = 0
+        self.i_episode = 0
         self.save_batch_time = datetime.now()  # init
 
     def step(self, experience: DQNExperience) -> Union[tuple, None]:
@@ -84,6 +78,7 @@ class DQN(Agent):
         # Set to evaluation mode and get actions
         self.local_network.eval()
         with torch.no_grad():
+            state = self.encode_state(state)
             action_values = self.local_network(state)
 
         # Set back to training mode
@@ -94,10 +89,14 @@ class DQN(Agent):
             return np.argmax(action_values.cpu().numpy()).item()
         return random.choice(np.arange(self.action_size))
 
-    def learn(self, experiences: tuple) -> tuple:
+    def learn(self, experiences: namedtuple) -> tuple:
         """Updates the network parameters. Returns the training loss and average return."""
         states, actions, rewards, next_states, dones = experiences
         im_loss = None
+
+        # Encode states if using empowerment
+        states = self.encode_state(states)
+        next_states = self.encode_state(next_states)
 
         # Get max predicted Q-value from target network
         q_targets_next = self.target_network(next_states).detach().max(1)[0].unsqueeze(1)
@@ -131,6 +130,12 @@ class DQN(Agent):
 
         return loss.item(), im_loss
 
+    @staticmethod
+    def __target_hard_update_loop(target_params, local_params) -> None:
+        """Helper function for hard updating target networks."""
+        for target, local in zip(target_params, local_params):
+            target.data.copy_(local.data)
+
     def __update_target_network(self) -> None:
         """
         Performs a soft update of the target networks parameters.
@@ -138,6 +143,11 @@ class DQN(Agent):
         """
         for target, local in zip(self.target_network.parameters(), self.local_network.parameters()):
             target.data.copy_(self.params.tau * local.data + (1.0 - self.params.tau) * target.data)
+
+        if self.im_type == ValidIMMethods.EMPOWERMENT.value:
+            emp_model = self.im_method.model
+            self.__target_hard_update_loop(emp_model.source_target.parameters(), emp_model.source_net.parameters())
+            self.__target_hard_update_loop(emp_model.forward_target.parameters(), emp_model.forward_net.parameters())
 
     def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
         """
@@ -168,6 +178,7 @@ class DQN(Agent):
                 score = 0
                 state = self.env.reset()
                 actions, train_losses, im_losses = [], [], []
+                self.i_episode = i_episode
 
                 # Iterate over timesteps
                 for t in range(self.params.max_timesteps):
@@ -176,7 +187,7 @@ class DQN(Agent):
                     next_state, reward, done, info = self.env.step(action)  # Take an action
 
                     # Perform learning
-                    exp = DQNExperience(state.cpu(), action, reward, normalize(next_state), done)
+                    exp = DQNExperience(state.cpu(), action, reward, normalize(to_tensor(next_state)), done)
                     train_loss, im_loss = self.step(exp)
 
                     # Update state and score
@@ -205,7 +216,8 @@ class DQN(Agent):
 
                 # Add intrinsic loss to logger if available
                 if self.im_method is not None:
-                    self.log_data(intrinsic_losses=im_losses[-1].item())
+                    im_loss = im_losses[-1] if self.im_type == ValidIMMethods.EMPOWERMENT.value else im_losses[-1].item()
+                    self.log_data(intrinsic_losses=im_loss)
 
                 # Decrease epsilon
                 eps = max(self.params.eps_end, self.params.eps_decay * eps)
@@ -240,7 +252,11 @@ class DQN(Agent):
                   f'Train Loss: {self.logger.train_losses[i_episode-1]:.5f},  ', end='')
 
             if self.im_method is not None:
-                print(f'{self.im_type.title()} Loss: {self.logger.intrinsic_losses[i_episode - 1]:.5f},  ', end='')
+                intrinsic_losses = self.logger.intrinsic_losses[i_episode - 1]
+                if isinstance(intrinsic_losses, list):
+                    print(f'Source Loss: {intrinsic_losses[0]:.5f},  Forward Loss: {intrinsic_losses[1]:.5f},  ', end='')
+                else:
+                    print(f'{self.im_type.title()} Loss: {intrinsic_losses:.5f},  ', end='')
 
             print(timer_string(time_taken, 'Time taken:'))
             self.save_batch_time = datetime.now()  # Reset

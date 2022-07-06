@@ -56,8 +56,9 @@ intrinsic:
   curiosity:
     comparison_weight: 0.1
     importance_weight: 0.1
-    scaling_factor: 1.
+    curiosity_weight: 1.
   empowerment:
-    test: 0.1
+    softplus_beta: 1
+    empower_weight: 0.1
   surprise_based:
     test2: 0.1

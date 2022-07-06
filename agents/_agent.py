@@ -2,21 +2,31 @@ import os
 import tarfile
 import re
 
+from core.enums import ValidIMMethods
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
 from utils.helper import to_tensor, number_to_num_letter, save_model
 from utils.logger import Logger
 
+import torch
+
 
 class Agent:
     """A base class for all agents."""
     def __init__(self, env_details: EnvDetails, params: AgentParameters, device: str,
-                 seed: int, logger: Logger) -> None:
+                 seed: int, logger: Logger, im_type: tuple) -> None:
         self.env_details = env_details
         self.params = params
         self.device = device
         self.seed = seed
         self.logger = logger
+
+        self.im_type = im_type
+        self.im_method = None
+
+        if im_type is not None:
+            self.im_type = im_type[0]  # name
+            self.im_method = im_type[1]  # Controller
 
     def _initial_output(self, num_episodes: int, extra_info: str = '') -> None:
         """Provides basic information about the algorithm to the console."""
@@ -102,3 +112,10 @@ class Agent:
             env_name = re.findall('[A-Z][^A-Z]*', env_name)  # Uppercase letter split
             env_name = ''.join([item[:num_chars] for item in env_name])  # First num_chars of each word
         return env_name
+
+    def encode_state(self, state: torch.Tensor) -> torch.Tensor:
+        """Encodes a state if using the empowerment intrinsic motivation method. Otherwise, returns the
+        initial state."""
+        if self.im_type == ValidIMMethods.EMPOWERMENT.value:
+            state = self.im_method.model.encoder(state)
+        return state

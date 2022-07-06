@@ -3,6 +3,8 @@ from enum import Enum
 from intrinsic.module import Curiosity, Empowerment, SurpriseBased
 from intrinsic.model import CuriosityModel, EmpowermentModel, SurpriseBasedModel
 
+import torch.optim as optim
+
 
 class CoreCheckpointParams(Enum):
     """An enum that stores the core checkpoint (save) parameter names.
@@ -21,6 +23,7 @@ class OptionalParams(Enum):
     inverse_loss = 1
     input_shape = 2
     record_every = 3
+    state_loss = 4
 
 
 class ValidModels(Enum):
@@ -47,7 +50,9 @@ class IMType(Enum):
     }
     empowerment = {
         'module': Empowerment,
-        'model': EmpowermentModel
+        'model': EmpowermentModel,
+        'source_optim': optim.Adam,
+        'forward_optim': optim.Adam
     }
     surprise_based = {
         'module': SurpriseBased,

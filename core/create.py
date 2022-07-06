@@ -1,6 +1,7 @@
 import os
 import random
 import sys
+from typing import Union
 import numpy as np
 import yaml
 
@@ -19,7 +20,9 @@ from core.parameters import (
     ModelParameters,
     RainbowDQNParameters
 )
+from intrinsic.controller import IMController
 from intrinsic.parameters import IMParameters
+from intrinsic.empower_models import QNetwork, RainbowNetwork, PPONetwork, EmpowerModel
 from models._base import BaseModel
 from models.actor_critic import ActorCritic
 from models.dueling import CategoricalNoisyDueling
@@ -232,6 +235,7 @@ class SetModels:
 
         self.env_details = self.__create_env_details()
 
+        self.im_name = None
         if im_type is not None:
             self.im_name = im_type
             self.im_params = self.__create_im_params(im_type)
@@ -240,7 +244,8 @@ class SetModels:
         """Create a model."""
         # Handle intrinsic motivation method
         if self.im_params is not None:
-            im_type = (self.im_name, self.im_params)
+            im_method = IMController(self.im_name, self.im_params, self.optim_params, self.device)
+            im_type = (self.im_name, im_method)
         else:
             im_type = None
 
@@ -266,7 +271,7 @@ class SetModels:
         class_object = getattr(sys.modules['intrinsic.parameters'], f'{name}Parameters')
         return class_object(**params)
 
-    def __create_model_params(self, net_type: BaseModel, **net_kwargs) -> ModelParameters:
+    def __create_model_params(self, net_type: Union[BaseModel, EmpowerModel], **net_kwargs) -> ModelParameters:
         """Creates a set of model parameters based on the given network type."""
         network = net_type(**net_kwargs)
         return ModelParameters(
@@ -291,8 +296,9 @@ class SetModels:
         dqn_params = {**core_params, **self.yaml_params.dqn_vanilla, **buffer_params}
         params = DQNParameters(**dqn_params)
 
+        model = QNetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else BaseModel
         model_params = self.__create_model_params(
-            BaseModel,
+            model,
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )
@@ -304,8 +310,9 @@ class SetModels:
         params = RainbowDQNParameters(**rdqn_params)
         buffer_params = BufferParameters(**self.yaml_params.dqn_buffer, input_shape=self.env_details.input_shape)
 
+        model = RainbowNetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else CategoricalNoisyDueling
         model_params = self.__create_model_params(
-            CategoricalNoisyDueling,
+            model,
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions,
             n_atoms=params.n_atoms
@@ -315,8 +322,9 @@ class SetModels:
 
     def __create_ppo(self, im_type: tuple) -> PPO:
         """Creates a PPO model from predefined parameters."""
+        model = PPONetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else ActorCritic
         model_params = self.__create_model_params(
-            ActorCritic,
+            model,
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )

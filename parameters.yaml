@@ -60,8 +60,9 @@ intrinsic:
   curiosity:
     comparison_weight: 0.2 # Weight of inverse model vs forward model loss (beta)
     importance_weight: 0.1 # Weight for policy gradient loss vs intrinsic reward (lambda)
-    scaling_factor: 1. # A scaling factor for the reward (eta)
+    curiosity_weight: 1. # A scaling factor for the reward (eta)
   empowerment:
-    test: 0.1
+    softplus_beta: 1  # Beta metric for the soft+ function
+    empower_weight: 0.01 # A scaling factor for the reward
   surprise_based:
     test2: 0.1
