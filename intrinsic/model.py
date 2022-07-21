@@ -4,7 +4,6 @@ from intrinsic.empower_models import Encoder, SourceNet, ForwardDynamicsNet
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 
 
 class CuriosityModel(IMBaseModel):
@@ -86,14 +85,3 @@ class EmpowermentModel(IMBaseModel):
         # Fix encoder weights
         for param in self.encoder.parameters():
             param.requires_grad = False
-
-
-class SurpriseBasedModel(IMBaseModel):
-    """A neural network for the surprise-based intrinsic motivation method. Based on the X paper:
-
-    :param input_shape (tuple[int]) - image input dimensions (including batch size at first dimension)
-    :param n_actions (int) - number of possible actions in the environment
-    :param device (str) - name of CUDA device
-    """
-    def __init__(self, input_shape: tuple, n_actions: int, device: str = None) -> None:
-        super().__init__(input_shape, n_actions, device)

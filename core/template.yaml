@@ -60,5 +60,3 @@ intrinsic:
   empowerment:
     softplus_beta: 1
     empower_weight: 0.1
-  surprise_based:
-    test2: 0.1

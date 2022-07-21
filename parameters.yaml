@@ -64,5 +64,3 @@ intrinsic:
   empowerment:
     softplus_beta: 1  # Beta metric for the soft+ function
     empower_weight: 0.01 # A scaling factor for the reward
-  surprise_based:
-    test2: 0.1

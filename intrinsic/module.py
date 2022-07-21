@@ -5,9 +5,8 @@ from intrinsic.parameters import (
     IMExperience,
     CuriosityParameters,
     EmpowermentParameters,
-    SurpriseBasedParameters
 )
-from intrinsic.model import CuriosityModel, EmpowermentModel, SurpriseBasedModel
+from intrinsic.model import CuriosityModel, EmpowermentModel
 from models._base import BaseModel
 
 import torch
@@ -163,24 +162,3 @@ class Empowerment(IMMethod):
 
         reward = self.params.empower_weight * mutual_info.detach()
         return reward.detach()
-
-
-class SurpriseBased(IMMethod):
-    """
-    Simulates the surprise-based intrinsic reward as displayed in the X paper:
-
-    """
-    def __init__(self, params: SurpriseBasedParameters, module: SurpriseBasedModel, device: str):
-        super().__init__(params, module, device)
-
-    def __get_loss(self, experience):
-        """Computes the required loss values unique to surprise-based motivation."""
-        pass
-
-    def compute_loss(self, experience, model_loss):
-        """Computes the total loss using the surprise-based and model losses."""
-        pass
-
-    def compute_return(self, experience: IMExperience) -> torch.Tensor:
-        """Computes the intrinsic reward signal for surprised-based motivation."""
-        pass

@@ -71,3 +71,12 @@ _(Note)_ Official paper: [Proximal Policy Optimization Algorithms](https://arxiv
 - `COMPARSION_WEIGHT` - a `float` value used to weigh the inverse model loss against the forward model loss ($\beta$).
 - `IMPORTANCE_WEIGHT` - a `float` value used to weigh the importance of the policy gradient loss against the importance of learning the intrinsic reward signal ($\lambda$).
 - `SCALING_FACTOR` - a `float` value that represents the scaling factor for the reward ($\eta$).
+
+_(Note)_ Official paper: [Curiosity-driven Exploration by Self-supervised Prediction](https://arxiv.org/abs/1705.05363)
+
+### Empowerment
+
+- `SOFTPLUS_BETA` - an `integer` value for the beta metric in the soft+ function ($\beta$).
+- `EMPOWER_WEIGHT` - a `float` value that represents the scaling factor for the reward.
+
+_(Note)_ Paper: [Empowerment-driven Exploration using Mutual Information Estimation](https://arxiv.org/abs/1810.05533)

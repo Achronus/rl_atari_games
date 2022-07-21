@@ -30,12 +30,6 @@ class EmpowermentParameters(IMParameters):
 
 
 @dataclass
-class SurpriseBasedParameters(IMParameters):
-    """A data class to store the surprise-based intrinsic motivation parameters."""
-    pass
-
-
-@dataclass
 class IMExperience:
     """A data class that stores transition values required for intrinsic motivation methods."""
     state: torch.Tensor = torch.zeros(1, 128, 128)
