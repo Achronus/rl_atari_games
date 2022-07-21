@@ -24,6 +24,11 @@ def curiosity_params(env_details) -> CuriosityParameters:
 
 
 @pytest.fixture
+def optim_params() -> dict:
+    return {'lr': 0.001, 'eps': 0.001}
+
+
+@pytest.fixture
 def device() -> str:
     return 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -34,8 +39,8 @@ def curiosity_model(env_details, device) -> CuriosityModel:
 
 
 @pytest.fixture
-def controller(curiosity_params, device) -> IMController:
-    return IMController('curiosity', curiosity_params, device)
+def controller(curiosity_params, optim_params, device) -> IMController:
+    return IMController('curiosity', curiosity_params, optim_params, device)
 
 
 @pytest.fixture
@@ -53,9 +58,9 @@ def experience(state, actions) -> IMExperience:
     return IMExperience(state, state, actions)
 
 
-def test_imcontroller_invalid_type(curiosity_params, device) -> None:
+def test_imcontroller_invalid_type(curiosity_params, optim_params, device) -> None:
     with pytest.raises(ValueError):
-        IMController('None', curiosity_params, device)
+        IMController('None', curiosity_params, optim_params, device)
 
 
 def test_imcontroller_init_valid(controller) -> None:
@@ -101,3 +106,5 @@ def test_imcontroller_module_compute_loss_valid(controller, experience) -> None:
 def test_imcontroller_module_compute_return_valid(controller, experience) -> None:
     reward = controller.module.compute_return(experience)
     assert torch.numel(reward) == 32
+
+

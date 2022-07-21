@@ -13,11 +13,12 @@ import torch
 
 class Agent:
     """A base class for all agents."""
-    def __init__(self, env_details: EnvDetails, params: AgentParameters, device: str,
+    def __init__(self, env_details: EnvDetails, params: AgentParameters, devices: tuple,
                  seed: int, logger: Logger, im_type: tuple) -> None:
         self.env_details = env_details
         self.params = params
-        self.device = device
+        self.device = devices[0]
+        self.multi_devices = devices[1]
         self.seed = seed
         self.logger = logger
 

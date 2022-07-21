@@ -39,7 +39,7 @@ def device() -> str:
 
 @pytest.fixture
 def ppo(env_details, model_params, ppo_params, device) -> PPO:
-    return PPO(env_details, model_params, ppo_params, device=device, seed=1)
+    return PPO(env_details, model_params, ppo_params, devices=(device, None), seed=1)
 
 
 def test_ppo_act_valid(ppo, device) -> None:

@@ -24,20 +24,29 @@ class PPO(Agent):
     :param env_details (EnvDetails) - a class containing parameters for the environment
     :param model_params (ModelParameters) - a data class containing model specific parameters
     :param params (PPOParameters) - a data class containing PPO specific parameters
-    :param device (str) - name of CUDA device ('cpu' or 'cuda:0')
+    :param devices (tuple) - the types of GPU devices, first element must be a string and the second a list of
+                             CUDA device IDs or None. For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
     :param seed (int) - an integer for recreating results
     :param im_type (tuple[str, IMController]) - the type of intrinsic motivation to use with its controller
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: PPOParameters, device: str, seed: int, im_type: tuple = None) -> None:
+                 params: PPOParameters, devices: tuple, seed: int, im_type: tuple = None) -> None:
         self.logger = PPOLogger()
-        super().__init__(env_details, params, device, seed, self.logger, im_type)
+        super().__init__(env_details, params, devices, seed, self.logger, im_type)
 
         self.envs = gym_vec_env_v0(env_details.make_env('ppo'), num_envs=params.num_envs, multiprocessing=True)
         self.buffer = RolloutBuffer(params.rollout_size, params.num_envs,
                                     env_details.input_shape, env_details.action_space.shape)
 
         self.network = model_params.network.to(self.device)
+
+        # Handle for multi-GPUs
+        if self.multi_devices is not None:
+            self.local_network = nn.parallel.DistributedDataParallel(
+                self.network,
+                device_ids=self.multi_devices,
+                output_device=self.device
+            )
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric

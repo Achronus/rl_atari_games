@@ -65,7 +65,7 @@ class DataLoader:
             env_details=self.cp_data['env_details'],
             model_params=self.cp_data['model_params'],
             params=self.cp_data['params'],
-            device=self.device,
+            devices=(self.device, None),
             seed=self.cp_data['seed'],
             im_type=self.cp_data['other']['im_type']
         )

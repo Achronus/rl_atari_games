@@ -21,7 +21,7 @@ class IMMethod:
         self.device = device
 
     @abstractmethod
-    def __get_loss(self, experience):
+    def get_loss(self, experience):
         pass
 
     @abstractmethod
@@ -41,7 +41,7 @@ class Curiosity(IMMethod):
     def __init__(self, params: CuriosityParameters, model: CuriosityModel, device: str):
         super().__init__(params, model, device)
 
-    def __get_loss(self, experience: IMExperience) -> tuple:
+    def get_loss(self, experience: IMExperience) -> tuple:
         """Computes the required loss values unique to curiosity."""
         encoded_state = self.model.encode(experience.state)
         encoded_next_state = self.model.encode(experience.next_state)
@@ -58,7 +58,7 @@ class Curiosity(IMMethod):
 
     def compute_loss(self, experience: IMExperience, model_loss: torch.Tensor) -> tuple:
         """Computes the total loss using the curiosity and model losses."""
-        forward_loss, inverse_loss = self.__get_loss(experience)
+        forward_loss, inverse_loss = self.get_loss(experience)
         curiosity_loss = (1 - self.params.comparison_weight) * inverse_loss.flatten().mean()
         curiosity_loss += self.params.comparison_weight * forward_loss.flatten().mean()
         curiosity_loss = curiosity_loss.sum() / curiosity_loss.flatten().shape[0]
@@ -68,7 +68,7 @@ class Curiosity(IMMethod):
 
     def compute_return(self, experience: IMExperience) -> torch.Tensor:
         """Computes the intrinsic reward signal for curiosity."""
-        forward_loss, _ = self.__get_loss(experience)
+        forward_loss, _ = self.get_loss(experience)
         reward = (1. / self.params.curiosity_weight) * forward_loss
         return reward.detach()
 
@@ -110,7 +110,7 @@ class Empowerment(IMMethod):
         # Merge state means into shape -> (batch_size, state_size)
         return torch.cat(marginals)
 
-    def __get_loss(self, experience: IMExperience) -> torch.Tensor:
+    def get_loss(self, experience: IMExperience) -> torch.Tensor:
         """Gets the components for computing the loss values unique to empowerment."""
         # Compute state difference between current and prediction
         next_state_diff = self.model.forward_net(experience.state, experience.actions)
@@ -142,7 +142,7 @@ class Empowerment(IMMethod):
         # Compute losses
         action_pred, next_action_pred = self.__get_action_preds(experience)
         source_loss = -((-self.soft_plus(-action_pred)).mean() - self.soft_plus(next_action_pred).mean())
-        forward_loss = self.__get_loss(experience)
+        forward_loss = self.get_loss(experience)
 
         # Update source network
         self.source_optim.zero_grad()

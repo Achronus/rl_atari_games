@@ -32,15 +32,16 @@ import torch
 import torch.optim as optim
 
 
-def create_model(model_type: str, env: str = 'primary', device: str = None,
+def create_model(model_type: str, devices: tuple, env: str = 'primary',
                  filename: str = 'parameters', im_type: str = None) -> Agent:
     """
     Initializes predefined parameters from a yaml file and creates a model of the specified type.
     Returns the model as a class instance.
 
     :param model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
+    :param devices (tuple) - the types of GPU devices, first element must be a string and the second a list of CUDA
+                             device IDs or None. For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
     :param env (str) - an optional parameter that defines a custom environment to use
-    :param device (str) - an optional parameter that defines a CUDA device to use
     :param filename (str) - the YAML filename in the root directory that contains hyperparameters
     :param im_type (str) - the name of the intrinsic motivation to use ('curiosity', 'empowerment' or 'surprise_based')
     """
@@ -59,7 +60,7 @@ def create_model(model_type: str, env: str = 'primary', device: str = None,
     CheckParamsValid(name, params, im_type)
 
     # Create selected model
-    set_model = SetModels(name, params, env, device, im_type)
+    set_model = SetModels(name, params, devices, env, im_type)
     return set_model.create()
 
 
@@ -212,19 +213,20 @@ class SetModels:
 
     :param model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
     :param yaml_params (YamlParameters) - class object that contains parameters from a YAML file
+    :param devices (tuple) - the types of GPU devices, first element must be a string and the second a list of CUDA
+                             device IDs or None. For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
     :param env (str) - an optional parameter that defines a custom environment to use. When set to
                        'primary', environment 'env_name' from 'yaml_params' is used
-    :param device (str) - an optional parameter that defines a CUDA device to use
     :param im_type (str) - name of the type of intrinsic motivation method to use
     """
-    def __init__(self, model_type: str, yaml_params: YamlParameters,
-                 env: str = 'primary', device: str = None, im_type: str = None) -> None:
+    def __init__(self, model_type: str, yaml_params: YamlParameters, devices: tuple,
+                 env: str = 'primary', im_type: str = None) -> None:
         self.model_type = model_type
         self.yaml_params = yaml_params
         self.seed = yaml_params.environment['seed']
         self.optim_params = yaml_params.core_optimizer
         self.dqn_core_params = {**self.yaml_params.core_agent, **self.yaml_params.dqn_core}
-        self.device = device
+        self.devices = devices
         self.env = env
         self.im_params = None
 
@@ -244,7 +246,7 @@ class SetModels:
         """Create a model."""
         # Handle intrinsic motivation method
         if self.im_params is not None:
-            im_method = IMController(self.im_name, self.im_params, self.optim_params, self.device)
+            im_method = IMController(self.im_name, self.im_params, self.optim_params, self.devices[0])
             im_type = (self.im_name, im_method)
         else:
             im_type = None
@@ -302,7 +304,7 @@ class SetModels:
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )
-        return DQN(self.env_details, model_params, params, self.device, self.seed, im_type)
+        return DQN(self.env_details, model_params, params, self.devices, self.seed, im_type)
 
     def __create_rainbow_dqn(self, im_type: tuple) -> RainbowDQN:
         """Creates a Rainbow DQN model from predefined parameters."""
@@ -318,7 +320,7 @@ class SetModels:
             n_atoms=params.n_atoms
         )
         return RainbowDQN(self.env_details, model_params, params, buffer_params,
-                          self.device, self.seed, im_type)
+                          self.devices, self.seed, im_type)
 
     def __create_ppo(self, im_type: tuple) -> PPO:
         """Creates a PPO model from predefined parameters."""
@@ -331,7 +333,7 @@ class SetModels:
 
         ppo_params = {**self.yaml_params.core_agent, **self.yaml_params.ppo}
         params = PPOParameters(**ppo_params)
-        return PPO(self.env_details, model_params, params, self.device, self.seed, im_type)
+        return PPO(self.env_details, model_params, params, self.devices, self.seed, im_type)
 
 
 def get_utility_params(filename: str = 'parameters') -> dict:

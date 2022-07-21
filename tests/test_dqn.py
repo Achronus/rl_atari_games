@@ -67,7 +67,7 @@ def device() -> str:
 
 @pytest.fixture
 def dqn(env_details, model_params, dqn_params, device) -> DQN:
-    return DQN(env_details, model_params, dqn_params, device=device, seed=1)
+    return DQN(env_details, model_params, dqn_params, devices=(device, None), seed=1)
 
 
 @pytest.fixture
@@ -84,11 +84,11 @@ def rdqn(env_details, device) -> RainbowDQN:
         network=network,
         optimizer=optim.Adam(network.parameters(), lr=1e3, eps=1e3)
     )
-    return RainbowDQN(env_details, model_params, params, buffer_params, device=device, seed=1)
+    return RainbowDQN(env_details, model_params, params, buffer_params, devices=(device, None), seed=1)
 
 
 def test_dqn_creation_invalid(env_details, model_params, device) -> None:
-    assert DQN(env_details, model_params, DQNParameters(gamma=1), device=device, seed=1)
+    assert DQN(env_details, model_params, DQNParameters(gamma=1), devices=(device, None), seed=1)
 
 
 def test_dqn_act_valid(dqn, env_details) -> None:

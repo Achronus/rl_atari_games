@@ -14,6 +14,8 @@ from utils.helper import number_to_num_letter, normalize, to_tensor, timer, time
 from utils.logger import DQNLogger
 
 import torch
+import torch.nn as nn
+
 
 DQNExperience = namedtuple('Experience', field_names=['state', 'action', 'reward', 'next_state', 'done'])
 
@@ -23,17 +25,18 @@ class DQN(Agent):
     A basic Deep Q-Network that uses an experience replay buffer and fixed Q-targets.
     """
     def __init__(self, env_details: EnvDetails, model_params: ModelParameters,
-                 params: AgentParameters, device: str, seed: int, im_type: tuple = None) -> None:
+                 params: AgentParameters, devices: tuple, seed: int, im_type: tuple = None) -> None:
         """
         :param env_details (EnvDetails) - a class containing parameters for the environment
         :param model_params (ModelParameters) - a data class containing model specific parameters
         :param params (AgentParameters) - a data class containing DQN specific parameters
-        :param device (str) - name of CUDA device ('cpu' or 'cuda:0')
+        :param devices (tuple) - the types of GPU devices, first element must be a string and the second a list of
+                             CUDA device IDs or None. For example, ('cpu', None) or ('cuda:0', ['cuda:0, cuda:1'])
         :param seed (int) - an integer for recreating results
         :param im_type (tuple[str, IMController]) - the type of intrinsic motivation to use with its controller
         """
         self.logger = DQNLogger()
-        super().__init__(env_details, params, device, seed, self.logger, im_type)
+        super().__init__(env_details, params, devices, seed, self.logger, im_type)
 
         self.env = env_details.make_env('dqn')
         self.action_size = env_details.n_actions
@@ -42,6 +45,20 @@ class DQN(Agent):
 
         self.local_network = model_params.network.to(self.device)
         self.target_network = model_params.network.to(self.device)  # Fixed target network
+
+        # Handle for multi-GPUs
+        if self.multi_devices is not None:
+            self.local_network = nn.parallel.DistributedDataParallel(
+                self.local_network,
+                device_ids=self.multi_devices,
+                output_device=self.device
+            )
+
+            self.target_network = nn.parallel.DistributedDataParallel(
+                self.target_network,
+                device_ids=self.multi_devices,
+                output_device=self.device
+            )
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric

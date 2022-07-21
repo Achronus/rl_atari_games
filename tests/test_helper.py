@@ -3,16 +3,9 @@ from utils.helper import *
 import torch
 
 
-def test_set_device_valid_gpu() -> None:
-    device = set_device()
-    device_available = torch.cuda.is_available()
-    assert True if device_available and device == 'cuda:0' else False
-
-
-def test_set_device_valid_cpu() -> None:
-    device = set_device()
-    device_available = torch.cuda.is_available()
-    assert False if device_available and device == 'cpu' else True
+def test_set_device_custom_valid_cpu() -> None:
+    device, _ = set_devices('cpu')
+    assert True if device == 'cpu' else False
 
 
 def test_number_to_num_letter_valid() -> None:
