@@ -13,7 +13,7 @@ other_environments:
 ---
 core:
   utility:
-    num_episodes: 50000 # Number of episodes to train the model
+    num_episodes: 100000 # Number of episodes to train the model
     save_every: 10000 # Every number of episodes to save the model
   agent:
     gamma: 0.99 # Discount factor
@@ -30,12 +30,12 @@ dqn:
     max_timesteps: 1000 # Maximum steps before each episode ends
   vanilla:
     eps_start: 1.0 # Initial epsilon
-    eps_end: 0.01 # Greedy epsilon threshold
+    eps_end: 0.1 # Greedy epsilon threshold
     eps_decay: 0.995 # Epsilon decay rate
   rainbow:
     n_steps: 3 # Number of steps for multi-step learning
     replay_period: 100 # Number of transitions before learning begins
-    learn_frequency: 4 # Number of timesteps to perform agent learning
+    learn_frequency: 4 # Number of timesteps to perform agent learning (repeat action)
     reward_clip: 0.1 # Number for maximum reward bounds
     n_atoms: 51 # Number of atoms (distributions)
     v_min: -10 # Minimum size of the atoms
@@ -49,8 +49,18 @@ dqn:
 ---
 ppo:
   loss_clip: 0.1 # Value for surrogate clipping
-  rollout_size: 100 # Number of samples to train on
-  num_agents: 8 # Number of agents used during training
+  rollout_size: 10 # Number of samples to train on
+  num_envs: 4 # Number of environments used during training
   num_mini_batches: 4 # Number of mini-batches during training
   entropy_coef: 0.01 # Coefficient for regularisation (lambda)
   value_loss_coef: 0.5 # Coefficient for decreasing value loss
+
+---
+intrinsic:
+  curiosity:
+    comparison_weight: 0.2 # Weight of inverse model vs forward model loss (beta)
+    importance_weight: 0.1 # Weight for policy gradient loss vs intrinsic reward (lambda)
+    curiosity_weight: 1. # A scaling factor for the reward (eta)
+  empowerment:
+    softplus_beta: 1  # Beta metric for the soft+ function
+    empower_weight: 0.01 # A scaling factor for the reward

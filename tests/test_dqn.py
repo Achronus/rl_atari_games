@@ -12,7 +12,7 @@ from core.parameters import (
     RainbowDQNParameters,
     BufferParameters
 )
-from models.cnn import CNNModel
+from models._base import BaseModel
 from models.dueling import CategoricalNoisyDueling
 
 import torch
@@ -30,7 +30,7 @@ def env_details() -> EnvDetails:
 
 @pytest.fixture
 def model_params(env_details) -> ModelParameters:
-    network = CNNModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
+    network = BaseModel(input_shape=env_details.input_shape, n_actions=env_details.n_actions)
     return ModelParameters(
         network=network,
         optimizer=optim.Adam(params=network.parameters(), lr=1e-3, eps=1e-3),
@@ -181,3 +181,7 @@ def test_rainbow_train_valid(rdqn) -> None:
         assert True
     except (RuntimeError, TypeError, ValueError):
         assert False
+
+
+def test_rdqn_save_file_env_name_valid(rdqn) -> None:
+    assert rdqn.save_file_env_name() == 'SpaInv'

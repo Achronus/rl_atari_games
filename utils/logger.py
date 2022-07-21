@@ -2,8 +2,7 @@ class Logger:
     """
     A base logger that stores information for each episode iteration.
 
-    Parameters:
-        keys (list[str]) - a list of names of information to store
+    :param keys (list[str]) - a list of names of information to store
     """
     def __init__(self, keys: list) -> None:
         self.keys = keys
@@ -35,21 +34,22 @@ class Logger:
 class DQNLogger(Logger):
     """A DQN logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['avg_returns', 'actions', 'train_losses', 'ep_scores']
+        self.keys = ['actions', 'train_losses', 'ep_scores', 'intrinsic_losses']
         super().__init__(self.keys)
 
 
 class PPOLogger(Logger):
     """A PPO logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['actions', 'avg_rewards', 'avg_returns', 'policy_losses',
+        self.keys = ['actions', 'avg_returns', 'avg_rewards', 'policy_losses',
                      'value_losses', 'entropy_losses', 'total_losses',
-                     'approx_kl']
+                     'approx_kl', 'intrinsic_losses']
         super().__init__(self.keys)
 
 
 class RDQNLogger(Logger):
     """A Rainbow DQN logger that stores information for each episode iteration."""
     def __init__(self) -> None:
-        self.keys = ['avg_returns', 'actions', 'train_losses', 'ep_scores']
+        self.keys = ['avg_returns', 'actions', 'train_losses', 'ep_scores',
+                     'intrinsic_losses']
         super().__init__(self.keys)

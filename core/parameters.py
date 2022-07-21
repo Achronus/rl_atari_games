@@ -19,6 +19,7 @@ class EnvParameters:
 
     assert isinstance(env_name, str), "'env_name' must be a string!"
 
+
 @dataclass
 class ModelParameters:
     """A data class for model (neural network) parameters."""
@@ -39,6 +40,7 @@ class CoreDQNParameters(AgentParameters):
     tau: float = 0.001  # Soft updater for target network
     update_steps: int = 4  # How often to update the network
     max_timesteps: int = 1000  # Max before episode end
+    target_update_steps: int = 1000  # Frequency for updating the target network
 
     assert isinstance(gamma, float), "'gamma' must be a float value!"
     assert isinstance(tau, float), "'tau' must be a float value!"
@@ -50,7 +52,7 @@ class DQNParameters(CoreDQNParameters):
     buffer_size: int = 10  # Size of memory buffer
     batch_size: int = 1  # Buffer mini-batch size
     eps_start: float = 1.0  # Initial epsilon
-    eps_end: float = 0.01  # Greedy epsilon threshold
+    eps_end: float = 0.1  # Greedy epsilon threshold
     eps_decay: float = 0.995  # Epsilon decay rate
 
 
@@ -76,7 +78,7 @@ class PPOParameters(AgentParameters):
     update_steps: int = 4  # How often to update the network
     loss_clip: float = 0.5  # Value for surrogate clipping
     rollout_size: int = 100  # Number of samples to train on
-    num_agents: int = 4  # Number of agents used during training
+    num_envs: int = 4  # Number of environments used during training
     num_mini_batches: int = 4  # Number of mini-batches during training
     entropy_coef: float = 0.01  # Coefficient for regularisation
     value_loss_coef: float = 0.5  # Coefficient for decreasing value loss

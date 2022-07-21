@@ -2,21 +2,31 @@ import os
 import tarfile
 import re
 
+from core.enums import ValidIMMethods
 from core.env_details import EnvDetails
 from core.parameters import AgentParameters
 from utils.helper import to_tensor, number_to_num_letter, save_model
 from utils.logger import Logger
 
+import torch
+
 
 class Agent:
     """A base class for all agents."""
     def __init__(self, env_details: EnvDetails, params: AgentParameters, device: str,
-                 seed: int, logger: Logger) -> None:
+                 seed: int, logger: Logger, im_type: tuple) -> None:
         self.env_details = env_details
         self.params = params
         self.device = device
         self.seed = seed
         self.logger = logger
+
+        self.im_type = im_type
+        self.im_method = None
+
+        if im_type is not None:
+            self.im_type = im_type[0]  # name
+            self.im_method = im_type[1]  # Controller
 
     def _initial_output(self, num_episodes: int, extra_info: str = '') -> None:
         """Provides basic information about the algorithm to the console."""
@@ -30,20 +40,14 @@ class Agent:
         """
         Saves the model when the current episode equals the save count.
 
-        Parameters:
-            i_episode (int) - current episode number
-            save_count (int) - episode number to save
-            filename (str) - a custom filename. Note: environment name and episode number are post-appended
-            extra_data (dict) - additional items to store (e.g. network.state_dict())
+        :param i_episode (int) - current episode number
+        :param save_count (int) - episode number to save
+        :param filename (str) - a custom filename. Environment name and episode number are post-appended
+        :param extra_data (dict) - additional items to store (e.g. network.state_dict())
         """
         if i_episode % save_count == 0:
             ep_idx, ep_letter = number_to_num_letter(i_episode)
-
-            # Reduce env name if large
-            env_name = self.env_details.name
-            if len(env_name) > 6:
-                env_name = re.findall('[A-Z][^A-Z]*', env_name)  # Uppercase letter split
-                env_name = ''.join([item[:3] for item in env_name])  # First 3 letters of each word
+            env_name = self.save_file_env_name()  # Reduce environment name if needed
 
             filename += f'_{env_name}_ep{int(ep_idx)}{ep_letter.lower()}'
             # Create initial param_dict
@@ -94,3 +98,24 @@ class Agent:
     def log_data(self, **kwargs) -> None:
         """Adds data to the logger."""
         self.logger.add(**kwargs)
+
+    def save_file_env_name(self, threshold: int = 6, num_chars: int = 3) -> str:
+        """
+        Reduces the environment name if it is larger than threshold. Returns the updated name.
+
+        :param threshold (int) - value for comparing length of environment name, larger than this value reduces it
+        :param num_chars (int) - number of letters for each word during reduction
+        """
+        # Reduce env name if large
+        env_name = self.env_details.name
+        if len(env_name) > threshold:
+            env_name = re.findall('[A-Z][^A-Z]*', env_name)  # Uppercase letter split
+            env_name = ''.join([item[:num_chars] for item in env_name])  # First num_chars of each word
+        return env_name
+
+    def encode_state(self, state: torch.Tensor) -> torch.Tensor:
+        """Encodes a state if using the empowerment intrinsic motivation method. Otherwise, returns the
+        initial state."""
+        if self.im_type == ValidIMMethods.EMPOWERMENT.value:
+            state = self.im_method.model.encoder(state)
+        return state

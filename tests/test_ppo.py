@@ -29,7 +29,7 @@ def model_params(env_details: EnvDetails) -> ModelParameters:
 @pytest.fixture
 def ppo_params() -> PPOParameters:
     return PPOParameters(gamma=0.99, update_steps=1, loss_clip=0.1, rollout_size=1,
-                         num_agents=2, num_mini_batches=1)
+                         num_envs=2, num_mini_batches=1)
 
 
 @pytest.fixture
@@ -58,7 +58,7 @@ def test_ppo_generate_rollouts_valid(ppo) -> None:
 
 
 def test_ppo_compute_rtgs_and_advantages_valid(ppo) -> None:
-    tensor = torch.zeros((ppo.buffer.size, ppo.buffer.num_agents))
+    tensor = torch.zeros((ppo.buffer.size, ppo.buffer.num_envs))
     rtgs, advantages = ppo.compute_rtgs_and_advantages()
     rtgs_valid = rtgs.shape == tensor.shape
     advantages_valid = advantages.shape == tensor.shape
@@ -101,7 +101,7 @@ def test_ppo_clip_surrogate_valid(ppo, device) -> None:
 
 
 def test_ppo_add_to_buffer_valid(ppo) -> None:
-    tensor = torch.ones((ppo.buffer.size, ppo.buffer.num_agents))
+    tensor = torch.ones((ppo.buffer.size, ppo.buffer.num_envs))
     ppo.add_to_buffer(0, rewards=tensor)
     assert all(torch.eq(ppo.buffer.rewards, tensor).tolist())
 

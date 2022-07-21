@@ -1,13 +1,16 @@
 import os
 import random
+import sys
 from typing import Union
 import numpy as np
 import yaml
 
+from agents._agent import Agent
 from agents.dqn import DQN
 from agents.rainbow import RainbowDQN
 from agents.ppo import PPO
 from core.env_details import EnvDetails
+from core.enums import OptionalParams, ValidModels, ValidIMMethods
 from core.exceptions import MissingVariableError
 from core.parameters import (
     BufferParameters,
@@ -17,9 +20,11 @@ from core.parameters import (
     ModelParameters,
     RainbowDQNParameters
 )
+from intrinsic.controller import IMController
+from intrinsic.parameters import IMParameters
+from intrinsic.empower_models import QNetwork, RainbowNetwork, PPONetwork, EmpowerModel
 from models._base import BaseModel
 from models.actor_critic import ActorCritic
-from models.cnn import CNNModel
 from models.dueling import CategoricalNoisyDueling
 from utils.helper import dict_search
 
@@ -27,30 +32,34 @@ import torch
 import torch.optim as optim
 
 
-def create_model(model_type: str, env: str = 'primary', device: str = None, filename: str = 'parameters') -> Union[DQN, RainbowDQN, PPO]:
+def create_model(model_type: str, env: str = 'primary', device: str = None,
+                 filename: str = 'parameters', im_type: str = None) -> Agent:
     """
     Initializes predefined parameters from a yaml file and creates a model of the specified type.
     Returns the model as a class instance.
 
-    Parameters:
-        model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
-        env (str) - an optional parameter that defines a custom environment to use (default: primary)
-        device (str) - an optional parameter that defines a CUDA device to use (default: None)
-        filename (str) - the YAML filename in the root directory that contains hyperparameters (default: parameters)
+    :param model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
+    :param env (str) - an optional parameter that defines a custom environment to use
+    :param device (str) - an optional parameter that defines a CUDA device to use
+    :param filename (str) - the YAML filename in the root directory that contains hyperparameters
+    :param im_type (str) - the name of the intrinsic motivation to use ('curiosity', 'empowerment' or 'surprise_based')
     """
-    valid_names = ['dqn', 'ppo', 'rainbow']
+    valid_names = [item.value for item in ValidModels]
+    valid_im_names = [item.value for item in ValidIMMethods]
     name = model_type.lower()
     if name not in valid_names:
         raise ValueError(f"Model type '{model_type}' does not exist! Must be one of: {valid_names}.")
+    if im_type is not None and im_type.lower() not in valid_im_names:
+        raise ValueError(f"IM type '{im_type}' does not exist! Must be one of: {valid_im_names}.")
 
     # Get yaml file parameters
     params = YamlParameters(filename)
 
     # Check parameters are valid
-    CheckParamsValid(name, params)
+    CheckParamsValid(name, params, im_type)
 
     # Create selected model
-    set_model = SetModels(name, params, env, device)
+    set_model = SetModels(name, params, env, device, im_type)
     return set_model.create()
 
 
@@ -119,7 +128,7 @@ class YamlParameters:
             params = getattr(self, key)
 
             for param_name in params.keys():
-                available_params.append(param_name)
+                available_params.append(param_name.lower())
         return available_params
 
     def __repr__(self) -> str:
@@ -127,48 +136,59 @@ class YamlParameters:
 
 
 class CheckParamsValid:
-    """A class that checks if the required parameters are available in the yaml file."""
+    """
+    A class that checks if the required parameters are available in the yaml file.
+
+    :param model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
+    :param yaml_params (YamlParameters) - YAML parameters extracted from a file, stored in a class object
+    :param im_type (str) - name of the type of intrinsic motivation method to use
+    """
     core_optim = ['lr', 'eps']
     core_agent = ['gamma', 'update_steps', 'clip_grad']
 
-    def __init__(self, model_type: str, yaml_params: YamlParameters) -> None:
+    def __init__(self, model_type: str, yaml_params: YamlParameters, im_type: str = None) -> None:
         self.available_params = yaml_params.available_params
+        self.im_type = im_type
 
         self.env_params = self.get_attribute_names(EnvParameters)
         self.core_params = self.core_optim + self.core_agent
         self.dqn_params = self.get_attribute_names(DQNParameters)
         self.ppo_params = self.get_attribute_names(PPOParameters)
         self.rainbow_params = self.get_attribute_names(RainbowDQNParameters)
-        self.buffer_params = self.__get_buffer_keys()
+        self.buffer_params = self.get_attribute_names(BufferParameters)
 
         # Set desired parameters
         params = self.core_params + self.env_params
-        if model_type == 'dqn':
+        if model_type == ValidModels.DQN.value:
             params += self.dqn_params
-        elif model_type == 'rainbow':
+        elif model_type == ValidModels.RAINBOW.value:
             params += self.rainbow_params + self.buffer_params
-        elif model_type == 'ppo':
+        elif model_type == ValidModels.PPO.value:
             params += self.ppo_params
+
+        # Add intrinsic motivation parameters
+        if self.im_type is not None:
+            self.im_params = self.__get_im_parameters()
+            params += self.im_params
+
+        # Handle optional parameters
+        optional_params = list(OptionalParams.__members__.keys())
+        params = [key for key in params if key not in optional_params]
 
         # Check parameters exist
         unique_params = list(set(params))
         self.check_params(unique_params)
 
-    def __get_env_keys(self) -> list:
-        """Gets the environment parameters attribute names as a list and updates certain keys.
-        Returns the updated list."""
-        keys = self.get_attribute_names(EnvParameters)
+    def __get_im_parameters(self) -> list:
+        """Gets the data class associated to the given intrinsic motivation method."""
+        # Handle name formatting
+        name = self.im_type.title()
+        name = ''.join(name.split('_'))
 
-        updated_keys = [key for key in keys if key not in ['RECORD_EVERY']]  # Remove keys
-        return updated_keys
-
-    def __get_buffer_keys(self) -> list:
-        """Gets the buffer parameters attribute names as a list and updates certain keys.
-                Returns the updated list."""
-        keys = self.get_attribute_names(BufferParameters)
-
-        updated_keys = [key for key in keys if key not in ['input_shape']]  # Remove keys
-        return updated_keys
+        # Get the parameters class object
+        im_params_class_object = getattr(sys.modules['intrinsic.parameters'], f'{name}Parameters')
+        params = self.get_attribute_names(im_params_class_object)
+        return params
 
     def check_params(self, param_list: list) -> None:
         """Checks if the given parameters are set in the yaml file."""
@@ -177,28 +197,28 @@ class CheckParamsValid:
         if len(false_bools) >= 1:
             missing_params = [param_list[i] for i in false_bools]
             raise MissingVariableError(f"Cannot find variables {missing_params} in yaml file! Have you added them? "
-                                       f"Refer to 'core/template.yaml' for required format.")
+                                       f"Refer to 'core/template.yaml' for the required format.")
 
     @staticmethod
     def get_attribute_names(cls) -> list:
         """Gets a list of attribute names for a given class."""
         keys = list(cls.__dict__.keys())
-        return [key for key in keys if "__" not in key]
+        return [key.lower() for key in keys if "__" not in key]
 
 
 class SetModels:
     """
     A class that sets the parameters from a predefined yaml file and creates model instances.
 
-    Parameters:
-        model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
-        yaml_params (YamlParameters) - class object that contains parameters from a YAML file
-        env (str) - an optional parameter that defines a custom environment to use. When set to
-                    'primary', environment 'env_name' from 'yaml_params' is used (default: primary)
-        device (str) - an optional parameter that defines a CUDA device to use (default: None)
+    :param model_type (str) - name of the model ('dqn', 'ppo' or 'rainbow')
+    :param yaml_params (YamlParameters) - class object that contains parameters from a YAML file
+    :param env (str) - an optional parameter that defines a custom environment to use. When set to
+                       'primary', environment 'env_name' from 'yaml_params' is used
+    :param device (str) - an optional parameter that defines a CUDA device to use
+    :param im_type (str) - name of the type of intrinsic motivation method to use
     """
     def __init__(self, model_type: str, yaml_params: YamlParameters,
-                 env: str = 'primary', device: str = None) -> None:
+                 env: str = 'primary', device: str = None, im_type: str = None) -> None:
         self.model_type = model_type
         self.yaml_params = yaml_params
         self.seed = yaml_params.environment['seed']
@@ -206,6 +226,7 @@ class SetModels:
         self.dqn_core_params = {**self.yaml_params.core_agent, **self.yaml_params.dqn_core}
         self.device = device
         self.env = env
+        self.im_params = None
 
         # Seeding
         random.seed(self.seed)
@@ -214,21 +235,49 @@ class SetModels:
 
         self.env_details = self.__create_env_details()
 
-    def create(self) -> Union[DQN, RainbowDQN, PPO]:
-        """Create a model based on the given name."""
-        if self.model_type == 'dqn':
-            return self.__create_dqn()
-        elif self.model_type == 'rainbow':
-            return self.__create_rainbow_dqn()
-        elif self.model_type == 'ppo':
-            return self.__create_ppo()
+        self.im_name = None
+        if im_type is not None:
+            self.im_name = im_type
+            self.im_params = self.__create_im_params(im_type)
 
-    def __create_model_params(self, net_type: BaseModel, **net_kwargs) -> ModelParameters:
+    def create(self) -> Agent:
+        """Create a model."""
+        # Handle intrinsic motivation method
+        if self.im_params is not None:
+            im_method = IMController(self.im_name, self.im_params, self.optim_params, self.device)
+            im_type = (self.im_name, im_method)
+        else:
+            im_type = None
+
+        # Create class instance
+        if self.model_type == ValidModels.DQN.value:
+            return self.__create_dqn(im_type)
+        elif self.model_type == ValidModels.RAINBOW.value:
+            return self.__create_rainbow_dqn(im_type)
+        elif self.model_type == ValidModels.PPO.value:
+            return self.__create_ppo(im_type)
+
+    def __create_im_params(self, im_type: str) -> IMParameters:
+        """Creates a set of intrinsic motivation parameters based on the given type."""
+        params = getattr(self.yaml_params, f'intrinsic_{im_type}')
+        params = {**params, 'input_shape': self.env_details.input_shape,
+                  'n_actions': self.env_details.n_actions}
+
+        # Handle name formatting
+        name = im_type.title()
+        name = ''.join(name.split('_'))
+
+        # Get the parameters class object
+        class_object = getattr(sys.modules['intrinsic.parameters'], f'{name}Parameters')
+        return class_object(**params)
+
+    def __create_model_params(self, net_type: Union[BaseModel, EmpowerModel], **net_kwargs) -> ModelParameters:
         """Creates a set of model parameters based on the given network type."""
         network = net_type(**net_kwargs)
         return ModelParameters(
             network=network,
-            optimizer=optim.Adam(network.parameters(), lr=self.optim_params['lr'], eps=self.optim_params['eps'])
+            optimizer=optim.Adam(network.parameters(), lr=self.optim_params['lr'],
+                                 eps=self.optim_params['eps'])
         )
 
     def __create_env_details(self) -> EnvDetails:
@@ -239,7 +288,7 @@ class SetModels:
         env_params = EnvParameters(**self.yaml_params.environment)
         return EnvDetails(env_params)
 
-    def __create_dqn(self) -> DQN:
+    def __create_dqn(self, im_type: tuple) -> DQN:
         """Creates a DQN model from predefined parameters."""
         core_params = {key: val for key, val in self.dqn_core_params.items() if key not in ['clip_grad']}
         buffer_params = {'buffer_size': self.yaml_params.dqn_buffer['buffer_size'],
@@ -247,38 +296,42 @@ class SetModels:
         dqn_params = {**core_params, **self.yaml_params.dqn_vanilla, **buffer_params}
         params = DQNParameters(**dqn_params)
 
+        model = QNetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else BaseModel
         model_params = self.__create_model_params(
-            CNNModel,
+            model,
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )
-        return DQN(self.env_details, model_params, params, self.device, self.seed)
+        return DQN(self.env_details, model_params, params, self.device, self.seed, im_type)
 
-    def __create_rainbow_dqn(self) -> RainbowDQN:
+    def __create_rainbow_dqn(self, im_type: tuple) -> RainbowDQN:
         """Creates a Rainbow DQN model from predefined parameters."""
         rdqn_params = {**self.dqn_core_params, **self.yaml_params.dqn_rainbow}
         params = RainbowDQNParameters(**rdqn_params)
         buffer_params = BufferParameters(**self.yaml_params.dqn_buffer, input_shape=self.env_details.input_shape)
 
+        model = RainbowNetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else CategoricalNoisyDueling
         model_params = self.__create_model_params(
-            CategoricalNoisyDueling,
+            model,
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions,
             n_atoms=params.n_atoms
         )
-        return RainbowDQN(self.env_details, model_params, params, buffer_params, self.device, self.seed)
+        return RainbowDQN(self.env_details, model_params, params, buffer_params,
+                          self.device, self.seed, im_type)
 
-    def __create_ppo(self) -> PPO:
+    def __create_ppo(self, im_type: tuple) -> PPO:
         """Creates a PPO model from predefined parameters."""
+        model = PPONetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else ActorCritic
         model_params = self.__create_model_params(
-            ActorCritic,
+            model,
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )
 
         ppo_params = {**self.yaml_params.core_agent, **self.yaml_params.ppo}
         params = PPOParameters(**ppo_params)
-        return PPO(self.env_details, model_params, params, self.device, self.seed)
+        return PPO(self.env_details, model_params, params, self.device, self.seed, im_type)
 
 
 def get_utility_params(filename: str = 'parameters') -> dict:
