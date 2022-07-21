@@ -15,6 +15,10 @@ def main():
     """Run main functionality of the application."""
     device = set_device()
 
+    # TODO: update output progress to single and multi-GPU
+    # TODO: update main to handle multi-GPU
+    # TODO: create multi-GPU functionality
+
     # Train on multiple environments
     for env in ['primary', env2, env3]:
         # Create agent instances
