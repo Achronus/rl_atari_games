@@ -1,3 +1,4 @@
+import os
 from collections import Counter
 from datetime import datetime
 
@@ -6,12 +7,14 @@ from core.buffer import PrioritizedReplayBuffer
 from core.enums import ValidIMMethods
 from core.parameters import AgentParameters, ModelParameters, BufferParameters, Experience
 from core.env_details import EnvDetails
+from core.multiprocessing import multi_train
 from intrinsic.parameters import IMExperience
 from utils.helper import number_to_num_letter, normalize, to_tensor, timer, timer_string
 from utils.logger import RDQNLogger
 
 import torch
 import torch.nn as nn
+import torch.multiprocessing as mp
 
 
 class RainbowDQN(Agent):
@@ -37,29 +40,18 @@ class RainbowDQN(Agent):
         self.buffer_params = buffer_params
 
         self.buffer = PrioritizedReplayBuffer(buffer_params, params.n_steps, env_details.stack_size,
-                                              self.device, self.logger)
-        self.local_network = model_params.network.to(self.device)
-        self.target_network = model_params.network.to(self.device)
+                                              self.primary_device, self.logger)
+        self.local_network = model_params.network
+        self.target_network = model_params.network
 
-        # Handle for multi-GPUs
-        if self.multi_devices is not None:
-            self.local_network = nn.parallel.DistributedDataParallel(
-                self.local_network,
-                device_ids=self.multi_devices,
-                output_device=self.device
-            )
-
-            self.target_network = nn.parallel.DistributedDataParallel(
-                self.target_network,
-                device_ids=self.multi_devices,
-                output_device=self.device
-            )
+        self.local_network = self.local_network.to(self.primary_device)
+        self.target_network = self.target_network.to(self.primary_device)
 
         self.optimizer = model_params.optimizer
         self.loss = model_params.loss_metric
 
         self.z_delta = (params.v_max - params.v_min) / (params.n_atoms - 1)
-        self.z_support = torch.linspace(params.v_min, params.v_max, params.n_atoms).to(self.device)
+        self.z_support = torch.linspace(params.v_min, params.v_max, params.n_atoms)
         self.discount_scaling = torch.Tensor([self.params.gamma ** i for i in range(self.params.n_steps)],)
         self.priority_weight = buffer_params.priority_weight
         self.priority_weight_increase = 0.
@@ -71,7 +63,7 @@ class RainbowDQN(Agent):
         with torch.no_grad():
             state = self.encode_state(state)
             atom_action_probs = self.local_network.forward(state)
-            action_probs = (atom_action_probs * self.z_support).sum(dim=2)  # shape -> (batch_size, n_actions)
+            action_probs = (atom_action_probs * self.z_support.to(self.device)).sum(dim=2)  # shape -> (batch_size, n_actions)
             action = torch.argmax(action_probs).item()
         return action
 
@@ -113,10 +105,36 @@ class RainbowDQN(Agent):
         if self.im_method is not None:
             loss, im_loss = self.im_method.module.compute_loss(im_exp, loss)
 
-        self.optimizer.zero_grad()
-        loss.backward()
-        nn.utils.clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
-        self.optimizer.step()
+        # Handle for multiple GPUs
+        if self.multi_devices is not None:
+            world_size = len(self.multi_devices)
+            network_args_path = "saved_models/network_args.checkpoint"
+            network_args = {'loss': loss,
+                            'clip_grad': self.params.clip_grad,
+                            'im_name': self.im_type,
+                            'input_shape': self.env_details.input_shape,
+                            'n_actions': self.env_details.n_actions}
+            torch.save(network_args, network_args_path)
+
+            mp.spawn(
+                multi_train,
+                args=(world_size, 'rainbow'),
+                nprocs=world_size,
+                join=True
+            )
+
+            # Update networks with final checkpoint
+            checkpoint_path = "saved_models/model.checkpoint"
+            checkpoint = torch.load(checkpoint_path, map_location=self.primary_device)
+            self.local_network.load_state_dict(checkpoint.get('local_network'), strict=False)
+            self.target_network.load_state_dict(checkpoint.get('target_network'), strict=False)
+            os.remove(checkpoint_path)
+            os.remove(network_args_path)
+        else:
+            self.optimizer.zero_grad()
+            loss.backward()
+            nn.utils.clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
+            self.optimizer.step()
 
         # Update target network
         self.__update_target_network()
@@ -135,7 +153,7 @@ class RainbowDQN(Agent):
         """Computes the Double-Q probabilities for the best actions obtained from the local network."""
         # Compute N-step next state probabilities
         probs = self.local_network.forward(next_states)  # Local net: next action probabilities
-        probs_dist = self.z_support.expand_as(probs) * probs  # Fit probs in range of atoms [min, max]
+        probs_dist = self.z_support.to(self.device).expand_as(probs) * probs  # Fit probs in range of atoms [min, max]
         best_actions_indices = probs_dist.sum(2).argmax(1)  # Perform action selection
 
         self.target_network.sample_noise(self.device)  # Sample new target noise
@@ -144,10 +162,11 @@ class RainbowDQN(Agent):
         # Calculate Double-Q probabilities for best actions, shape -> [batch_size, n_atoms]
         return target_probs[range(self.batch_size), best_actions_indices].cpu()
 
-    def compute_double_q(self, states: torch.Tensor, samples: dict, returns: torch.Tensor, double_q_probs: torch.Tensor) -> torch.Tensor:
+    def compute_double_q(self, states: torch.Tensor, samples: dict, returns: torch.Tensor,
+                         double_q_probs: torch.Tensor) -> torch.Tensor:
         """Performs the categorical DQN operations to compute Double-Q values."""
         # Compute Tz (Bellman operator T applied to z) - Categorical DQN
-        support = self.z_support.unsqueeze(0).cpu()
+        support = self.z_support.to(self.device).unsqueeze(0).cpu()
         tz = returns.unsqueeze(1) + samples['dones'] * (self.params.gamma ** self.params.n_steps) * support
         tz = tz.clamp(min=self.params.v_min, max=self.params.v_max)  # Limit values between atom [min, max]
 
@@ -255,18 +274,19 @@ class RainbowDQN(Agent):
                 # Display output and save model
                 model_name = f'rainbow{self.im_type}' if self.im_type is not None else 'rainbow'
                 buffer_idx, buffer_letter = number_to_num_letter(self.buffer.capacity)
+                extra_data = {
+                    'local_network': self.local_network.state_dict(),
+                    'target_network': self.target_network.state_dict(),
+                    'network_type': self.local_network.__class__.__name__,
+                    'optimizer': self.optimizer,
+                    'buffer_params': self.buffer_params,
+                    'im_type': self.im_type
+                }
                 self.__output_progress(num_episodes, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_batch{self.buffer.batch_size}_'
                                                     f'buffer{int(buffer_idx)}{buffer_letter.lower()}',
-                                           extra_data={
-                                               'local_network': self.local_network.state_dict(),
-                                               'target_network': self.target_network.state_dict(),
-                                               'network_type': self.local_network.__class__.__name__,
-                                               'optimizer': self.optimizer,
-                                               'buffer_params': self.buffer_params,
-                                               'im_type': self.im_type
-                                           })
+                                           extra_data=extra_data)
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     @staticmethod

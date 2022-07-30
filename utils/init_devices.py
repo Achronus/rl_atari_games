@@ -34,11 +34,12 @@ class CUDADevices:
         device_ids = self.__get_multi_devices()
         self.device = device_ids[0]
         self.multi_devices = device_ids
+        print(f"Multiple CUDA devices available -> '{self.multi_devices}'. Primary device set to -> '{self.device}'.")
 
     def __set_single_gpu(self) -> None:
         """Sets CUDA to a single GPU when available with 1 device."""
         self.device = "cuda:0"
-        print(f"CUDA available. Device set to GPU -> '{self.device}'")
+        print(f"CUDA available. Device set to GPU -> '{self.device}'.")
 
     def __set_cpu(self) -> None:
         """Sets device attribute to CPU when CUDA is unavailable."""

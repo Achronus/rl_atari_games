@@ -17,8 +17,11 @@ class Agent:
                  seed: int, logger: Logger, im_type: tuple) -> None:
         self.env_details = env_details
         self.params = params
-        self.device = devices[0]
+
+        self.device = devices[0]  # Either primary or rank
         self.multi_devices = devices[1]
+        self.primary_device = devices[0]  # Output device
+
         self.seed = seed
         self.logger = logger
 
