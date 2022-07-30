@@ -236,26 +236,24 @@ class SetModels:
         self.env_details = self.__create_env_details()
 
         self.im_name = None
+        self.im_type = None
+
+        # Handle intrinsic motivation methods
         if im_type is not None:
             self.im_name = im_type
             self.im_params = self.__create_im_params(im_type)
+            im_method = IMController(self.im_name, self.im_params, self.optim_params, self.device)
+            self.im_type = (self.im_name, im_method)
 
     def create(self) -> Agent:
         """Create a model."""
-        # Handle intrinsic motivation method
-        if self.im_params is not None:
-            im_method = IMController(self.im_name, self.im_params, self.optim_params, self.device)
-            im_type = (self.im_name, im_method)
-        else:
-            im_type = None
-
         # Create class instance
         if self.model_type == ValidModels.DQN.value:
-            return self.__create_dqn(im_type)
+            return self.__create_dqn()
         elif self.model_type == ValidModels.RAINBOW.value:
-            return self.__create_rainbow_dqn(im_type)
+            return self.__create_rainbow_dqn()
         elif self.model_type == ValidModels.PPO.value:
-            return self.__create_ppo(im_type)
+            return self.__create_ppo()
 
     def __create_im_params(self, im_type: str) -> IMParameters:
         """Creates a set of intrinsic motivation parameters based on the given type."""
@@ -288,7 +286,7 @@ class SetModels:
         env_params = EnvParameters(**self.yaml_params.environment)
         return EnvDetails(env_params)
 
-    def __create_dqn(self, im_type: tuple) -> DQN:
+    def __create_dqn(self) -> DQN:
         """Creates a DQN model from predefined parameters."""
         core_params = {key: val for key, val in self.dqn_core_params.items() if key not in ['clip_grad']}
         buffer_params = {'buffer_size': self.yaml_params.dqn_buffer['buffer_size'],
@@ -302,9 +300,9 @@ class SetModels:
             input_shape=self.env_details.input_shape,
             n_actions=self.env_details.n_actions
         )
-        return DQN(self.env_details, model_params, params, self.device, self.seed, im_type)
+        return DQN(self.env_details, model_params, params, self.device, self.seed, self.im_type)
 
-    def __create_rainbow_dqn(self, im_type: tuple) -> RainbowDQN:
+    def __create_rainbow_dqn(self) -> RainbowDQN:
         """Creates a Rainbow DQN model from predefined parameters."""
         rdqn_params = {**self.dqn_core_params, **self.yaml_params.dqn_rainbow}
         params = RainbowDQNParameters(**rdqn_params)
@@ -318,9 +316,9 @@ class SetModels:
             n_atoms=params.n_atoms
         )
         return RainbowDQN(self.env_details, model_params, params, buffer_params,
-                          self.device, self.seed, im_type)
+                          self.device, self.seed, self.im_type)
 
-    def __create_ppo(self, im_type: tuple) -> PPO:
+    def __create_ppo(self) -> PPO:
         """Creates a PPO model from predefined parameters."""
         model = PPONetwork if self.im_name == ValidIMMethods.EMPOWERMENT.value else ActorCritic
         model_params = self.__create_model_params(
@@ -331,7 +329,7 @@ class SetModels:
 
         ppo_params = {**self.yaml_params.core_agent, **self.yaml_params.ppo}
         params = PPOParameters(**ppo_params)
-        return PPO(self.env_details, model_params, params, self.device, self.seed, im_type)
+        return PPO(self.env_details, model_params, params, self.device, self.seed, self.im_type)
 
 
 def get_utility_params(filename: str = 'parameters') -> dict:

@@ -247,6 +247,7 @@ class PPO(Agent):
         :param print_every (int) - the number of episodes before outputting information
         :param save_count (int) - the number of episodes before saving the model
         """
+        num_episodes = self.params.rollout_size * self.num_envs * num_episodes
         num_updates = num_episodes // self.batch_size  # Training iterations
         assert not num_updates == 0, f"'num_episodes' must be larger than the 'batch_size': {self.batch_size}!"
 
