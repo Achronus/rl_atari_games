@@ -247,6 +247,7 @@ class PPO(Agent):
         :param print_every (int) - the number of episodes before outputting information
         :param save_count (int) - the number of episodes before saving the model
         """
+        num_episodes = self.params.rollout_size * self.num_envs * num_episodes
         num_updates = num_episodes // self.batch_size  # Training iterations
         assert not num_updates == 0, f"'num_episodes' must be larger than the 'batch_size': {self.batch_size}!"
 
@@ -277,7 +278,7 @@ class PPO(Agent):
                 self.__output_progress(num_updates, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_rollout{self.params.rollout_size}'
-                                                    f'_agents{self.params.num_envs}',
+                                                    f'_envs{self.params.num_envs}',
                                            extra_data={
                                                'network': self.network.state_dict(),
                                                'network_type': self.network.__class__.__name__,

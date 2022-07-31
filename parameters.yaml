@@ -13,8 +13,8 @@ other_environments:
 ---
 core:
   utility:
-    num_episodes: 100000 # Number of episodes to train the model
-    save_every: 10000 # Every number of episodes to save the model
+    num_episodes: 500000 # Number of episodes to train the model
+    save_every: 5000 # Every number of episodes to save the model
   agent:
     gamma: 0.99 # Discount factor
     update_steps: 4 # How often to update the network
@@ -43,7 +43,7 @@ dqn:
   buffer:
     priority_exponent: 0.5 # Prioritized buffer exponent (alpha)
     priority_weight: 0.4 # Initial prioritized buffer importance sampling weight (beta)
-    buffer_size: 1000 # Replay buffer size
+    buffer_size: 100000 # Replay buffer size
     batch_size: 32 # Buffer mini-batch size
 
 ---

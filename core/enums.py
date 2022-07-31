@@ -1,7 +1,7 @@
 from enum import Enum
 
-from intrinsic.module import Curiosity, Empowerment, SurpriseBased
-from intrinsic.model import CuriosityModel, EmpowermentModel, SurpriseBasedModel
+from intrinsic.module import Curiosity, Empowerment
+from intrinsic.model import CuriosityModel, EmpowermentModel
 
 import torch.optim as optim
 
@@ -38,7 +38,6 @@ class ValidIMMethods(Enum):
     create_model function."""
     CURIOSITY = 'curiosity'
     EMPOWERMENT = 'empowerment'
-    SURPRISE_BASED = 'surprise_based'
 
 
 class IMType(Enum):
@@ -53,8 +52,4 @@ class IMType(Enum):
         'model': EmpowermentModel,
         'source_optim': optim.Adam,
         'forward_optim': optim.Adam
-    }
-    surprise_based = {
-        'module': SurpriseBased,
-        'model': SurpriseBasedModel
     }
