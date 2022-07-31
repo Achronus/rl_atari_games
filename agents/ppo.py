@@ -278,7 +278,7 @@ class PPO(Agent):
                 self.__output_progress(num_updates, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_rollout{self.params.rollout_size}'
-                                                    f'_agents{self.params.num_envs}',
+                                                    f'_envs{self.params.num_envs}',
                                            extra_data={
                                                'network': self.network.state_dict(),
                                                'network_type': self.network.__class__.__name__,

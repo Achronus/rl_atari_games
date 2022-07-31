@@ -1,5 +1,6 @@
 import gym
 from gym.wrappers import (
+    FrameStack,
     GrayScaleObservation,
     ResizeObservation,
     RecordVideo
@@ -7,7 +8,6 @@ from gym.wrappers import (
 from datetime import datetime
 
 from core.parameters import EnvParameters
-from core.wrappers import FrameStack
 
 
 class EnvDetails:
