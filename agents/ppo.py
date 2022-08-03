@@ -274,7 +274,7 @@ class PPO(Agent):
                 self.learn()
 
                 # Display output and save model
-                model_name = f'ppo{self.im_type}' if self.im_type is not None else 'ppo'
+                model_name = f'ppo-{self.im_type[:3]}' if self.im_type is not None else 'ppo'
                 self.__output_progress(num_updates, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_rollout{self.params.rollout_size}'

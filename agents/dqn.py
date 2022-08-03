@@ -223,7 +223,7 @@ class DQN(Agent):
                 eps = max(self.params.eps_end, self.params.eps_decay * eps)
 
                 # Display output and save model
-                model_name = f'dqn{self.im_type}' if self.im_type is not None else 'dqn'
+                model_name = f'dqn-{self.im_type[:3]}' if self.im_type is not None else 'dqn'
                 self.__output_progress(num_episodes, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_batch{self.memory.batch_size}',

@@ -238,7 +238,7 @@ class RainbowDQN(Agent):
                     self.log_data(intrinsic_losses=im_loss)
 
                 # Display output and save model
-                model_name = f'rainbow{self.im_type}' if self.im_type is not None else 'rainbow'
+                model_name = f'rainbow-{self.im_type[:3]}' if self.im_type is not None else 'rainbow'
                 buffer_idx, buffer_letter = number_to_num_letter(self.buffer.capacity)
                 self.__output_progress(num_episodes, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
