@@ -17,15 +17,20 @@ class CUDADevices:
     def set_device(self, custom_device: str = None) -> str:
         """Updates the device attribute for either CUDA or CPU based on GPU availability.
         (Optional) when a custom device is provided, device is automatically set to it."""
+        valid_indices = [idx for idx in range(self.device_count)]
+        valid_devices = [f'cuda:{item}' for item in valid_indices]
+        valid_devices.insert(0, 'cpu')
+
         if custom_device is None:
             if self.cuda_available:
                 self.__set_single_gpu()
             else:
                 self.__set_cpu()
-        elif ('cuda' in custom_device and self.cuda_available) or (custom_device == 'cpu'):
+        elif ('cpu' in custom_device or 'cuda:' in custom_device) and int(custom_device.split(':')[-1]) in valid_indices:
             self.device = custom_device
+            print(f"Set to custom device -> '{self.device}'.")
         else:
-            raise ValueError(f"'{custom_device}' does not exist. Must be 'cpu' or a 'cuda:<id>' device.")
+            raise ValueError(f"'{custom_device}' does not exist. Must be one of: '{valid_devices}'.")
         return self.device
 
     def __set_single_gpu(self) -> None:
