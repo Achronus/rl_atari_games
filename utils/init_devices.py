@@ -14,7 +14,7 @@ class CUDADevices:
 
         self.device = ''  # Primary device
 
-    def set_device(self, custom_device: str = None) -> None:
+    def set_device(self, custom_device: str = None) -> str:
         """Updates the device attribute for either CUDA or CPU based on GPU availability.
         (Optional) when a custom device is provided, device is automatically set to it."""
         if custom_device is None:
@@ -22,8 +22,11 @@ class CUDADevices:
                 self.__set_single_gpu()
             else:
                 self.__set_cpu()
-        else:
+        elif ('cuda' in custom_device and self.cuda_available) or (custom_device == 'cpu'):
             self.device = custom_device
+        else:
+            raise ValueError(f"'{custom_device}' does not exist. Must be 'cpu' or a 'cuda:<id>' device.")
+        return self.device
 
     def __set_single_gpu(self) -> None:
         """Sets CUDA to a single GPU with the highest available memory."""
