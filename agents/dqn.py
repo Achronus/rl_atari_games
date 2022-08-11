@@ -226,7 +226,8 @@ class DQN(Agent):
                 model_name = f'dqn-{self.im_type[:3]}' if self.im_type is not None else 'dqn'
                 self.__output_progress(num_episodes, i_episode, print_every)
                 self._save_model_condition(i_episode, save_count,
-                                           filename=f'{model_name}_batch{self.memory.batch_size}',
+                                           filename=f'{model_name}_batch{self.memory.batch_size}'
+                                                    f'_buffer{int(buffer_idx)}{buffer_let.lower()}',
                                            extra_data={
                                                'local_network': self.local_network.state_dict(),
                                                'target_network': self.target_network.state_dict(),
@@ -235,7 +236,7 @@ class DQN(Agent):
                                                'loss_metric': self.loss,
                                                'im_type': self.im_type
                                            })
-        print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
+            print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
         """Provides a progress update on the model's training to the console."""
