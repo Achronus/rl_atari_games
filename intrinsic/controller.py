@@ -22,7 +22,7 @@ class IMController:
         self.im_method = IMType[im_type].value
 
         self.params = params
-        self.model = self.im_method['model'](params.input_shape, params.n_actions, device)
+        self.model = self.im_method['model'](params.input_shape, params.n_actions, device).to(device)
         self.module = self.im_method['module'](params, self.model, device)
 
         # Create empowerment optimizers
@@ -37,5 +37,3 @@ class IMController:
                 lr=optim_params['lr'],
                 eps=optim_params['eps']
             )
-        else:
-            self.model = self.model.to(device)
