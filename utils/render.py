@@ -22,9 +22,11 @@ def video_render(agent: Agent, episodes: int = 5) -> None:
             if type(agent) == DQN or type(agent) == RainbowDQN:
                 if type(agent) == RainbowDQN:
                     state = state.unsqueeze(0)
+                state = agent.encode_state(state)
                 action = agent.act(state)  # Generate an action
             elif type(agent) == PPO:
-                action_probs, _ = agent.network.forward(state.unsqueeze(0))
+                state = agent.encode_state(state.unsqueeze(0))
+                action_probs, _ = agent.network.forward(state)
                 preds = agent.act(action_probs)  # Generate an action
                 action = preds['action'].item()
 
@@ -56,9 +58,11 @@ def plot_render(agent: Agent, episodes: int = 5) -> None:
             if type(agent) == DQN or type(agent) == RainbowDQN:
                 if type(agent) == RainbowDQN:
                     state = state.unsqueeze(0)
+                state = agent.encode_state(state)
                 action = agent.act(state)  # Generate an action
             elif type(agent) == PPO:
-                action_probs, _ = agent.network.forward(state.unsqueeze(0))
+                state = agent.encode_state(state.unsqueeze(0))
+                action_probs, _ = agent.network.forward(state)
                 preds = agent.act(action_probs)  # Generate an action
                 action = preds['action'].item()
 
