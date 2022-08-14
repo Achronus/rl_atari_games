@@ -9,7 +9,7 @@ from agents.ppo import PPO
 from core.create import create_model
 from core.exceptions import MissingCheckpointKeyError, InvalidModelTypeError
 from core.parameters import ModelParameters
-from core.enums import CoreCheckpointParams
+from core.enums import CoreCheckpointParams, ValidIMMethods
 from utils.logger import Logger
 
 # Keep for globals() call in 'get_checkpoint_data()'
@@ -71,7 +71,16 @@ class DataLoader:
 
         if im_type is not None:
             model = create_model(model_type, device=self.device, im_type=im_type)
-            im_type = (im_type, model.im_method)
+            im_controller = model.im_method
+
+            if im_type == ValidIMMethods.EMPOWERMENT.value:
+                cp_other = self.cp_data['other']
+                im_controller.model.encoder.load_state_dict(cp_other.get('encoder'), strict=False)
+                im_controller.model.source_net.load_state_dict(cp_other.get('source_net'), strict=False)
+                im_controller.model.forward_net.load_state_dict(cp_other.get('forward_net'), strict=False)
+                im_controller.model.source_target.load_state_dict(cp_other.get('source_target'), strict=False)
+                im_controller.model.forward_target.load_state_dict(cp_other.get('forward_target'), strict=False)
+            im_type = (im_type, im_controller)
 
         return dict(
             env_details=self.cp_data['env_details'],

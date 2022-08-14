@@ -7,7 +7,7 @@ from agents.ppo import PPO
 from agents.rainbow import RainbowDQN
 from utils.dataloader import DataLoader
 from core.enums import ValidModels
-from utils.helper import to_tensor, normalize
+from utils.helper import to_tensor, normalize, number_to_num_letter
 
 
 def load_model(filename: str, device: str, model_type: str) -> Agent:
@@ -78,3 +78,26 @@ def test_model(model: Agent, episodes: int = 100) -> list:
     env.close()
     print('Scores avg:', np.mean(np.asarray(ep_scores)))
     return ep_scores
+
+
+def retrain_model(load_model_params: dict, train_params: dict, ep_start: int, ep_total: int) -> Agent:
+    """
+    Loads a trained model and trains it further from an episode start point.
+
+    :param load_model_params (dict) - dictionary containing the load_model() parameters (filename, device, model_type)
+    :param train_params (dict) - dictionary containing the model.train() parameters (print_every, save_count)
+    :param ep_start (int) - number of episodes to start at. E.g., 80,000
+    :param ep_total (int) - number of episodes to reach. E.g., 100,000
+    """
+    eps_remaining = ep_total - ep_start
+    model = load_model(load_model_params['filename'], device=load_model_params['device'],
+                       model_type=load_model_params['model_type'])
+    ep_s_idx, ep_s_let = number_to_num_letter(ep_start)
+    ep_re_idx, ep_re_let = number_to_num_letter(eps_remaining)
+    ep_tot_idx, ep_tot_let = number_to_num_letter(ep_total)
+    print(f'Starting training from {ep_s_idx}{ep_s_let} episodes for a further {ep_re_idx}{ep_re_let} '
+          f'(total = {ep_tot_idx}{ep_tot_let}).')
+    model.train(eps_remaining, print_every=train_params['print_every'], save_count=train_params['save_count'],
+                custom_ep_start=ep_start)
+    return model
+

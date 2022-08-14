@@ -158,13 +158,16 @@ class RainbowDQN(Agent):
         double_q.flatten().index_add_(dim=0, index=ub, source=double_ub)  # Add upper bounds
         return double_q
 
-    def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
+    def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000,
+              custom_ep_start: int = 0) -> None:
         """
         Train the agent.
 
         :param num_episodes (int) - the number of iterations to train the agent on
         :param print_every (int) - the number of episodes before outputting information
         :param save_count (int) - the number of episodes before saving the model
+        :param custom_ep_start (int) - (optional) a custom parameter for the episode start number.
+               Used exclusively for file save names. Useful when retraining models using retrain_model()
         """
         # Output info to console
         buffer_idx, buffer_let = number_to_num_letter(self.buffer.capacity)
@@ -180,7 +183,7 @@ class RainbowDQN(Agent):
         with timer('Total time taken:'):
             self.save_batch_time = datetime.now()  # print_every start time
             # Iterate over episodes
-            for i_episode in range(1, num_episodes + 1):
+            for i_episode in range(1+custom_ep_start, num_episodes+1+custom_ep_start):
                 # Initialize priority weight increase per episode
                 self.priority_weight_increase = min(i_episode / num_episodes, 1)
                 state = self.env.reset()  # Initialize state
@@ -240,18 +243,30 @@ class RainbowDQN(Agent):
                 # Display output and save model
                 model_name = f'rainbow-{self.im_type[:3]}' if self.im_type is not None else 'rainbow'
                 buffer_idx, buffer_letter = number_to_num_letter(self.buffer.capacity)
-                self.__output_progress(num_episodes, i_episode, print_every)
+                self.__output_progress(num_episodes+custom_ep_start, i_episode, print_every, custom_ep_start)
+                extra_data = {
+                    'local_network': self.local_network.state_dict(),
+                    'target_network': self.target_network.state_dict(),
+                    'network_type': self.local_network.__class__.__name__,
+                    'optimizer': self.optimizer,
+                    'buffer_params': self.buffer_params,
+                    'im_type': self.im_type
+                }
+                if self.im_type == ValidIMMethods.EMPOWERMENT.value:
+                    im_model_data = {
+                        'encoder': self.im_method.model.encoder.state_dict(),
+                        'source_net': self.im_method.model.source_net.state_dict(),
+                        'forward_net': self.im_method.model.forward_net.state_dict(),
+                        'source_target': self.im_method.model.source_target.state_dict(),
+                        'forward_target': self.im_method.model.forward_target.state_dict()
+                    }
+                    extra_data = {**extra_data, **im_model_data}
+
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_batch{self.buffer.batch_size}_'
                                                     f'buffer{int(buffer_idx)}{buffer_letter.lower()}',
-                                           extra_data={
-                                               'local_network': self.local_network.state_dict(),
-                                               'target_network': self.target_network.state_dict(),
-                                               'network_type': self.local_network.__class__.__name__,
-                                               'optimizer': self.optimizer,
-                                               'buffer_params': self.buffer_params,
-                                               'im_type': self.im_type
-                                           })
+                                           extra_data=extra_data,
+                                           custom_ep_count=custom_ep_start)
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     @staticmethod
@@ -273,9 +288,9 @@ class RainbowDQN(Agent):
             self.__target_hard_update_loop(emp_model.source_target.parameters(), emp_model.source_net.parameters())
             self.__target_hard_update_loop(emp_model.forward_target.parameters(), emp_model.forward_net.parameters())
 
-    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
+    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int, custom_ep_start: int = 0) -> None:
         """Provides a progress update on the model's training to the console."""
-        first_episode = i_episode == 1
+        first_episode = i_episode == 1+custom_ep_start
         last_episode = i_episode == num_episodes
 
         if first_episode or last_episode or i_episode % print_every == 0:

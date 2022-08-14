@@ -239,13 +239,16 @@ class PPO(Agent):
         clip = torch.clamp(ratio, min=1 - self.params.loss_clip, max=1 + self.params.loss_clip)
         return torch.min(advantages * ratio, advantages * clip)
 
-    def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
+    def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000,
+              custom_ep_start: int = 0) -> None:
         """
         Train the agent.
 
         :param num_episodes (int) - the number of iterations to train the agent on
         :param print_every (int) - the number of episodes before outputting information
         :param save_count (int) - the number of episodes before saving the model
+        :param custom_ep_start (int) - (optional) a custom parameter for the episode start number.
+               Used exclusively for file save names. Useful when retraining models using retrain_model()
         """
         num_episodes = self.params.rollout_size * self.num_envs * num_episodes
         num_updates = num_episodes // self.batch_size  # Training iterations
@@ -265,7 +268,7 @@ class PPO(Agent):
         with timer('Total time taken:'):
             self.save_batch_time = datetime.now()  # print_every start time
             # Iterate over training iterations
-            for i_episode in range(1, num_updates+1):
+            for i_episode in range(1+custom_ep_start, num_updates+1+custom_ep_start):
                 # Create rollouts and store in buffer
                 self.buffer.reset()  # Empty each episode
                 self.generate_rollouts()
@@ -275,22 +278,34 @@ class PPO(Agent):
 
                 # Display output and save model
                 model_name = f'ppo-{self.im_type[:3]}' if self.im_type is not None else 'ppo'
-                self.__output_progress(num_updates, i_episode, print_every)
+                self.__output_progress(num_updates+custom_ep_start, i_episode, print_every, custom_ep_start)
+                extra_data = {
+                    'network': self.network.state_dict(),
+                    'network_type': self.network.__class__.__name__,
+                    'optimizer': self.optimizer,
+                    'loss_metric': self.loss,
+                    'im_type': self.im_type
+                }
+                if self.im_type == ValidIMMethods.EMPOWERMENT.value:
+                    im_model_data = {
+                        'encoder': self.im_method.model.encoder.state_dict(),
+                        'source_net': self.im_method.model.source_net.state_dict(),
+                        'forward_net': self.im_method.model.forward_net.state_dict(),
+                        'source_target': self.im_method.model.source_target.state_dict(),
+                        'forward_target': self.im_method.model.forward_target.state_dict()
+                    }
+                    extra_data = {**extra_data, **im_model_data}
+
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_rollout{self.params.rollout_size}'
                                                     f'_envs{self.params.num_envs}',
-                                           extra_data={
-                                               'network': self.network.state_dict(),
-                                               'network_type': self.network.__class__.__name__,
-                                               'optimizer': self.optimizer,
-                                               'loss_metric': self.loss,
-                                               'im_type': self.im_type
-                                           })
+                                           extra_data=extra_data,
+                                           custom_ep_count=custom_ep_start)
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
-    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
+    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int, custom_ep_start: int = 0) -> None:
         """Provides a progress update on the model's training to the console."""
-        first_episode = i_episode == 1
+        first_episode = i_episode == 1+custom_ep_start
         last_episode = i_episode == num_episodes
 
         if first_episode or last_episode or i_episode % print_every == 0:

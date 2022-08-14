@@ -149,13 +149,16 @@ class DQN(Agent):
             self.__target_hard_update_loop(emp_model.source_target.parameters(), emp_model.source_net.parameters())
             self.__target_hard_update_loop(emp_model.forward_target.parameters(), emp_model.forward_net.parameters())
 
-    def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000) -> None:
+    def train(self, num_episodes: int, print_every: int = 100, save_count: int = 1000,
+              custom_ep_start: int = 0) -> None:
         """
         Train the agent.
 
         :param num_episodes (int) - the number of iterations to train the agent on
         :param print_every (int) - the number of episodes before outputting information
         :param save_count (int) - the number of episodes before saving the model
+        :param custom_ep_start (int) - (optional) a custom parameter for the episode start number.
+               Used exclusively for file save names. Useful when retraining models using retrain_model()
         """
         # Set initial epsilon
         eps = self.params.eps_start
@@ -173,7 +176,7 @@ class DQN(Agent):
         with timer('Total time taken:'):
             self.save_batch_time = datetime.now()  # print_every start time
             # Iterate over episodes
-            for i_episode in range(1, num_episodes+1):
+            for i_episode in range(1+custom_ep_start, num_episodes+1+custom_ep_start):
                 # Initialize state and score
                 score = 0
                 state = self.env.reset()
@@ -224,23 +227,35 @@ class DQN(Agent):
 
                 # Display output and save model
                 model_name = f'dqn-{self.im_type[:3]}' if self.im_type is not None else 'dqn'
-                self.__output_progress(num_episodes, i_episode, print_every)
+                self.__output_progress(num_episodes+custom_ep_start, i_episode, print_every, custom_ep_start)
+                extra_data = {
+                    'local_network': self.local_network.state_dict(),
+                    'target_network': self.target_network.state_dict(),
+                    'network_type': self.local_network.__class__.__name__,
+                    'optimizer': self.optimizer,
+                    'loss_metric': self.loss,
+                    'im_type': self.im_type
+                }
+                if self.im_type == ValidIMMethods.EMPOWERMENT.value:
+                    im_model_data = {
+                        'encoder': self.im_method.model.encoder.state_dict(),
+                        'source_net': self.im_method.model.source_net.state_dict(),
+                        'forward_net': self.im_method.model.forward_net.state_dict(),
+                        'source_target': self.im_method.model.source_target.state_dict(),
+                        'forward_target': self.im_method.model.forward_target.state_dict()
+                    }
+                    extra_data = {**extra_data, **im_model_data}
+
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_batch{self.memory.batch_size}'
                                                     f'_buffer{int(buffer_idx)}{buffer_let.lower()}',
-                                           extra_data={
-                                               'local_network': self.local_network.state_dict(),
-                                               'target_network': self.target_network.state_dict(),
-                                               'network_type': self.local_network.__class__.__name__,
-                                               'optimizer': self.optimizer,
-                                               'loss_metric': self.loss,
-                                               'im_type': self.im_type
-                                           })
+                                           extra_data=extra_data,
+                                           custom_ep_count=custom_ep_start)
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
-    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int) -> None:
+    def __output_progress(self, num_episodes: int, i_episode: int, print_every: int, custom_ep_start: int = 0) -> None:
         """Provides a progress update on the model's training to the console."""
-        first_episode = i_episode == 1
+        first_episode = i_episode == 1+custom_ep_start
         last_episode = i_episode == num_episodes+1
 
         if first_episode or last_episode or i_episode % print_every == 0:

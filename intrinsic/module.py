@@ -78,8 +78,8 @@ class Empowerment(IMMethod):
     Simulates the empowerment intrinsic reward as displayed in the Empowerment-driven Exploration
     using Mutual Information Estimation paper: https://arxiv.org/abs/1810.05533.
     """
-    def __init__(self, params: EmpowermentParameters, module: EmpowermentModel, device: str):
-        super().__init__(params, module, device)
+    def __init__(self, params: EmpowermentParameters, model: EmpowermentModel, device: str):
+        super().__init__(params, model, device)
         self.soft_plus = nn.Softplus(beta=params.softplus_beta)
         self.n_actions = self.model.n_actions
 

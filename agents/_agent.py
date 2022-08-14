@@ -36,7 +36,8 @@ class Agent:
               f'{int(ep_total_idx)}{ep_total_letter} episodes.')
         print(f'{extra_info}')
 
-    def _save_model_condition(self, i_episode: int, save_count: int, filename: str, extra_data: dict) -> None:
+    def _save_model_condition(self, i_episode: int, save_count: int, filename: str, extra_data: dict,
+                              custom_ep_count: int = 0) -> None:
         """
         Saves the model when the current episode equals the save count.
 
@@ -44,9 +45,10 @@ class Agent:
         :param save_count (int) - episode number to save
         :param filename (str) - a custom filename. Environment name and episode number are post-appended
         :param extra_data (dict) - additional items to store (e.g. network.state_dict())
+        :param custom_ep_count (int) - (optional) a number to add to the i_episode for the save filename
         """
         if i_episode % save_count == 0:
-            ep_idx, ep_letter = number_to_num_letter(i_episode)
+            ep_idx, ep_letter = number_to_num_letter(i_episode + custom_ep_count)
             env_name = self.save_file_env_name()  # Reduce environment name if needed
 
             filename += f'_{env_name}_ep{int(ep_idx)}{ep_letter.lower()}'
