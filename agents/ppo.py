@@ -299,8 +299,7 @@ class PPO(Agent):
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_rollout{self.params.rollout_size}'
                                                     f'_envs{self.params.num_envs}',
-                                           extra_data=extra_data,
-                                           custom_ep_count=custom_ep_start)
+                                           extra_data=extra_data)
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     def __output_progress(self, num_episodes: int, i_episode: int, print_every: int, custom_ep_start: int = 0) -> None:

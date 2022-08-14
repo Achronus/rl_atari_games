@@ -265,8 +265,7 @@ class RainbowDQN(Agent):
                 self._save_model_condition(i_episode, save_count,
                                            filename=f'{model_name}_batch{self.buffer.batch_size}_'
                                                     f'buffer{int(buffer_idx)}{buffer_letter.lower()}',
-                                           extra_data=extra_data,
-                                           custom_ep_count=custom_ep_start)
+                                           extra_data=extra_data)
             print(f"Training complete. Access metrics from 'logger' attribute.", end=' ')
 
     @staticmethod
