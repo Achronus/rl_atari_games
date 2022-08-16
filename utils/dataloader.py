@@ -70,7 +70,8 @@ class DataLoader:
         im_type = self.cp_data['other']['im_type']
 
         if im_type is not None:
-            model = create_model(model_type, device=self.device, im_type=im_type)
+            model = create_model(model_type, env=self.cp_data['env_details'].gym_name, device=self.device,
+                                 im_type=im_type)
             im_controller = model.im_method
 
             if im_type == ValidIMMethods.EMPOWERMENT.value:
