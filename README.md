@@ -1,7 +1,9 @@
 # Reinforcement Learning with Atari Games
 
 This repository focuses on exploring how Intrinsic Motivation (IM) effects Reinforcement Learning (RL) policy-based models.
-We use a Rainbow Deep Q-Network (RDQN) to simulate off-policy and Proximal Policy Optimization (PPO) as on-policy.
+We use a Deep Q-Network (DQN) to simulate off-policy and Proximal Policy Optimization (PPO) as on-policy.
+
+_(Note)_ functionality for Rainbow Deep Q-Networks (RDQNs) is available but is not used during the study due to time constraints.
 
 We focus on two IM methods: curiosity and empowerment, and evaluate their performance on three Atari games:
 Space Invaders, Q*bert, and Montezuma's Revenge. Our research aims to provide intuition on how IM methods affect these popular on-policy and off-policy agents.
@@ -9,6 +11,7 @@ Space Invaders, Q*bert, and Montezuma's Revenge. Our research aims to provide in
 ![Atari Games](/imgs/atari-games.png)
 
 _Figure 1. Examples of each environment. From left to right: Space Invaders, Q*bert, and Montezuma's Revenge (Source: [Gym Docs](https://www.gymlibrary.ml/environments/atari/))._
+
 
 ## File Structure
 
