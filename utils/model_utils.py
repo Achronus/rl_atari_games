@@ -80,7 +80,7 @@ def test_model(model: Agent, episodes: int = 100) -> list:
     return ep_scores
 
 
-def retrain_model(load_model_params: dict, train_params: dict, ep_start: int, ep_total: int) -> Agent:
+def improve_model(load_model_params: dict, train_params: dict, ep_start: int, ep_total: int) -> Agent:
     """
     Loads a trained model and trains it further from an episode start point.
 
@@ -92,11 +92,13 @@ def retrain_model(load_model_params: dict, train_params: dict, ep_start: int, ep
     eps_remaining = ep_total - ep_start
     model = load_model(load_model_params['filename'], device=load_model_params['device'],
                        model_type=load_model_params['model_type'])
+
     ep_s_idx, ep_s_let = number_to_num_letter(ep_start)
     ep_re_idx, ep_re_let = number_to_num_letter(eps_remaining)
     ep_tot_idx, ep_tot_let = number_to_num_letter(ep_total)
     print(f'Starting training from {ep_s_idx}{ep_s_let} episodes for a further {ep_re_idx}{ep_re_let} '
           f'(total = {ep_tot_idx}{ep_tot_let}).')
+
     model.train(eps_remaining, print_every=train_params['print_every'], save_count=train_params['save_count'],
                 custom_ep_start=ep_start)
     return model
