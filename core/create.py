@@ -42,7 +42,7 @@ def create_model(model_type: str, env: str = 'primary', device: str = None,
     :param env (str) - an optional parameter that defines a custom environment to use
     :param device (str) - an optional parameter that defines a CUDA device to use
     :param filename (str) - the YAML filename in the root directory that contains hyperparameters
-    :param im_type (str) - the name of the intrinsic motivation to use ('curiosity', 'empowerment' or 'surprise_based')
+    :param im_type (str) - the name of the intrinsic motivation to use ('curiosity' or 'empowerment')
     """
     valid_names = [item.value for item in ValidModels]
     valid_im_names = [item.value for item in ValidIMMethods]
