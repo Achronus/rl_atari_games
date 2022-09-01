@@ -80,15 +80,19 @@ def test_model(model: Agent, episodes: int = 100) -> list:
     return ep_scores
 
 
-def improve_model(load_model_params: dict, train_params: dict, ep_start: int, ep_total: int) -> Agent:
+def improve_model(load_model_params: dict, train_params: dict, ep_total: int) -> Agent:
     """
     Loads a trained model and trains it further from an episode start point.
 
     :param load_model_params (dict) - dictionary containing the load_model() parameters (filename, device)
     :param train_params (dict) - dictionary containing the model.train() parameters (print_every, save_count)
-    :param ep_start (int) - number of episodes to start at. E.g., 80,000
     :param ep_total (int) - number of episodes to reach. E.g., 100,000
     """
+    # Get episode start as number
+    ep_start_text = load_model_params['filename'].split('_')[-1][2:].lower()
+    ep_start_num, ep_start_letter = int(ep_start_text[:-1]), ep_start_text[-1]
+    ep_start = ep_start_num * 1000 if len(ep_start_text) == 3 and ep_start_text[-1] == 'k' else ep_start_num
+
     eps_remaining = ep_total - ep_start
     model = load_model(**load_model_params)
 
@@ -96,8 +100,7 @@ def improve_model(load_model_params: dict, train_params: dict, ep_start: int, ep
     ep_re_idx, ep_re_let = number_to_num_letter(eps_remaining)
     ep_tot_idx, ep_tot_let = number_to_num_letter(ep_total)
     print(f'Starting training from {ep_s_idx}{ep_s_let} episodes for a further {ep_re_idx}{ep_re_let} '
-          f'(total = {ep_tot_idx}{ep_tot_let}).')
+          f'({ep_tot_idx}{ep_tot_let} total).')
 
     model.train(num_episodes=eps_remaining, custom_ep_start=ep_start, **train_params)
     return model
-
