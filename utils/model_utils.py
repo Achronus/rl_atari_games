@@ -10,19 +10,19 @@ from core.enums import ValidModels
 from utils.helper import to_tensor, normalize, number_to_num_letter
 
 
-def load_model(filename: str, device: str, model_type: str) -> Agent:
+def load_model(filename: str, device: str) -> Agent:
     """
     Load a DQN or PPO model based on its given filename.
 
     :param filename (str) - filename of the model to load (must be stored in a 'saved_models' folder)
     :param device (str) - the CUDA device to load the model onto (CPU or GPU)
-    :param model_type (str) - the type of model to load (DQN or PPO)
     """
     filename = filename if filename[-3:] == '.pt' else f'{filename}.pt'
     assert os.path.exists('saved_models'), "'saved_models' folder does not exist! Have you created it?"
     assert os.path.exists(f'saved_models/{filename}'), f"'{filename}' does not exist in the 'saved_models' folder!"
 
-    model = model_type.lower()
+    model_type = filename.split('_')[0].lower()
+    model = filename.split('-')[0] if '-' in model_type else model_type
     valid_models = [item.value for item in ValidModels]
     loader = DataLoader(filename, model_type, device)
 
@@ -84,14 +84,13 @@ def improve_model(load_model_params: dict, train_params: dict, ep_start: int, ep
     """
     Loads a trained model and trains it further from an episode start point.
 
-    :param load_model_params (dict) - dictionary containing the load_model() parameters (filename, device, model_type)
+    :param load_model_params (dict) - dictionary containing the load_model() parameters (filename, device)
     :param train_params (dict) - dictionary containing the model.train() parameters (print_every, save_count)
     :param ep_start (int) - number of episodes to start at. E.g., 80,000
     :param ep_total (int) - number of episodes to reach. E.g., 100,000
     """
     eps_remaining = ep_total - ep_start
-    model = load_model(load_model_params['filename'], device=load_model_params['device'],
-                       model_type=load_model_params['model_type'])
+    model = load_model(**load_model_params)
 
     ep_s_idx, ep_s_let = number_to_num_letter(ep_start)
     ep_re_idx, ep_re_let = number_to_num_letter(eps_remaining)
@@ -99,7 +98,6 @@ def improve_model(load_model_params: dict, train_params: dict, ep_start: int, ep
     print(f'Starting training from {ep_s_idx}{ep_s_let} episodes for a further {ep_re_idx}{ep_re_let} '
           f'(total = {ep_tot_idx}{ep_tot_let}).')
 
-    model.train(eps_remaining, print_every=train_params['print_every'], save_count=train_params['save_count'],
-                custom_ep_start=ep_start)
+    model.train(num_episodes=eps_remaining, custom_ep_start=ep_start, **train_params)
     return model
 
