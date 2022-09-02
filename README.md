@@ -10,7 +10,7 @@ Space Invaders, Q*bert, and Montezuma's Revenge. Our research aims to provide in
 
 ![Atari Games](/imgs/atari-games.png)
 
-_Figure 1. Examples of each environment. From left to right: Space Invaders, Q*bert, and Montezuma's Revenge (Source: [Gym Docs](https://www.gymlibrary.ml/environments/atari/))._
+_Figure 1. Examples of each environment. From left to right: Space Invaders, Q*bert, and Montezuma's Revenge (Source: [Gym Docs](https://www.gymlibrary.dev/))._
 
 
 ## File Structure
