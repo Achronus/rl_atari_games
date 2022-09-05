@@ -125,9 +125,6 @@ class DQN(Agent):
         loss.backward()
         self.optimizer.step()
 
-        # Update target network
-        self.__update_target_network()
-
         return loss.item(), im_loss
 
     @staticmethod
@@ -210,6 +207,12 @@ class DQN(Agent):
                     if im_loss is not None:
                         im_losses.append(im_loss)
 
+                # Decrease epsilon
+                eps = max(self.params.eps_end, self.params.eps_decay * eps)
+
+                # Update target networks
+                self.__update_target_network()
+
                 # Log episodic metrics
                 self.log_data(
                     ep_scores=score,
@@ -221,9 +224,6 @@ class DQN(Agent):
                 if self.im_method is not None:
                     im_loss = im_losses[-1] if self.im_type == ValidIMMethods.EMPOWERMENT.value else im_losses[-1].item()
                     self.log_data(intrinsic_losses=im_loss)
-
-                # Decrease epsilon
-                eps = max(self.params.eps_end, self.params.eps_decay * eps)
 
                 # Display output and save model
                 model_name = f'dqn-{self.im_type[:3]}' if self.im_type is not None else 'dqn'
