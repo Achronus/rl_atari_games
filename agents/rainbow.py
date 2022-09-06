@@ -103,9 +103,6 @@ class RainbowDQN(Agent):
         nn.utils.clip_grad_norm_(self.local_network.parameters(), self.params.clip_grad)
         self.optimizer.step()
 
-        # Update target network
-        self.__update_target_network()
-
         # Log actions
         self.log_data(
             actions=Counter(samples['actions'].detach().cpu().tolist())
@@ -223,6 +220,9 @@ class RainbowDQN(Agent):
                     # Check if finished
                     if done:
                         break
+
+                # Update target network
+                self.__update_target_network()
 
                 # Sample new noise every replay period
                 if i_episode % self.params.replay_period == 0:

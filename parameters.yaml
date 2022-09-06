@@ -43,7 +43,7 @@ dqn:
   buffer:
     priority_exponent: 0.5 # Prioritized buffer exponent (alpha)
     priority_weight: 0.4 # Initial prioritized buffer importance sampling weight (beta)
-    buffer_size: 25000 # Replay buffer size
+    buffer_size: 1000 # Replay buffer size
     batch_size: 32 # Buffer mini-batch size
 
 ---
