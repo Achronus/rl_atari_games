@@ -17,7 +17,7 @@ class CuriosityParameters(IMParameters):
     forward_loss: nn.modules.loss = nn.MSELoss(reduction='none')
     inverse_loss: nn.modules.loss = nn.CrossEntropyLoss(reduction='none')
     comparison_weight: float = 0.2  # weighs inverse model loss against forward model loss (beta)
-    importance_weight: float = 0.1  # weights importance of policy gradient loss vs learning reward signal (lambda)
+    importance_weight: float = 0.1  # weights importance of Q-loss vs learning reward signal (lambda)
     curiosity_weight: float = 1.  # a scaling factor for the reward (eta)
 
 
