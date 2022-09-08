@@ -21,8 +21,8 @@ def load_model(filename: str, device: str) -> Agent:
     assert os.path.exists('saved_models'), "'saved_models' folder does not exist! Have you created it?"
     assert os.path.exists(f'saved_models/{filename}'), f"'{filename}' does not exist in the 'saved_models' folder!"
 
-    model_type = filename.split('_')[0].lower()
-    model = filename.split('-')[0] if '-' in model_type else model_type
+    model_type = filename.split('/')[-1].split('_')[0].lower() if '/' in filename else filename.split('_')[0].lower()
+    model = model_type.split('-')[0] if '-' in model_type else model_type
     valid_models = [item.value for item in ValidModels]
     loader = DataLoader(filename, model_type, device)
 
