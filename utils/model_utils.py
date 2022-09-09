@@ -1,13 +1,9 @@
 import os
-import numpy as np
 
 from agents._agent import Agent
-from agents.dqn import DQN
-from agents.ppo import PPO
-from agents.rainbow import RainbowDQN
 from utils.dataloader import DataLoader
 from core.enums import ValidModels
-from utils.helper import to_tensor, normalize, number_to_num_letter
+from utils.helper import number_to_num_letter
 
 
 def load_model(filename: str, device: str) -> Agent:
@@ -44,40 +40,6 @@ def load_model(filename: str, device: str) -> Agent:
 
     print(f"Loaded model: '{loader.filename}'")
     return loaded_model
-
-
-def test_model(model: Agent, episodes: int = 100) -> list:
-    """Tests a given model and returns a list of episode scores."""
-    env = model.env_details.make_env('testing')
-    ep_scores = []
-
-    for episode in range(1, episodes + 1):
-        state = env.reset()
-        done = False
-        score = 0
-        while not done:
-            state = normalize(to_tensor(state)).to(model.device)
-            if type(model) == DQN or type(model) == RainbowDQN:
-                if type(model) == RainbowDQN:
-                    state = state.unsqueeze(0)
-                state = model.encode_state(state)
-                action = model.act(state)  # Generate an action
-            elif type(model) == PPO:
-                state = model.encode_state(state.unsqueeze(0))
-                action_probs, _ = model.network.forward(state)
-                preds = model.act(action_probs)  # Generate an action
-                action = preds['action'].item()
-
-            next_state, reward, done, info = env.step(action)  # Take an action
-            state = next_state
-            score += reward
-
-        ep_scores.append(score)
-        if episode % 10 == 0 or episode == 1 or episode == episodes+1:
-            print(f'({episode}/{episodes}) Episode score: {int(score)}')
-    env.close()
-    print('Scores avg:', np.mean(np.asarray(ep_scores)))
-    return ep_scores
 
 
 def improve_model(load_model_params: dict, train_params: dict, ep_total: int) -> Agent:
