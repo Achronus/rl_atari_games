@@ -23,7 +23,7 @@ def plot_data(data: tuple[list, list], plot_type: str, format_dict: dict, figsiz
     :param figsize (tuple) - (optional) size of the plotted figure.
     :param graph_params (dict) - (optional) additional parameters unique to the selected graph. Refer to matplotlib
                                  documentation for more details.
-    :param filename (string) - (optional) a filepath and name for saving the plot. E.g., '/ppo/cur/ppo-cur_SpaInv.png'.
+    :param filename (string) - (optional) a filepath and name for saving the plot. E.g., '/plots/ppo-cur_SpaInv.png'.
     """
     valid_format_keys = ['title', 'xlabel', 'ylabel', 'disable_y_ticks', 'disable_x_ticks']
     if not isinstance(data, tuple):
