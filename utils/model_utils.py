@@ -1,4 +1,5 @@
 import os
+import re
 
 from agents._agent import Agent
 from utils.dataloader import DataLoader
@@ -52,9 +53,15 @@ def improve_model(load_model_params: dict, train_params: dict, ep_total: int) ->
     """
     # Get episode start as number
     ep_start_text = load_model_params['filename'].split('_')[-1][2:].lower()
-    ep_start_num, ep_start_letter = int(ep_start_text[:-1]), ep_start_text[-1]
-    ep_start = ep_start_num * 1000 if len(ep_start_text) == 3 and ep_start_text[-1] == 'k' else ep_start_num
 
+    # Handle start number and letter
+    if ep_start_text.isnumeric():
+        ep_start_num, ep_start_letter = int(ep_start_text), ''
+    else:
+        match = re.match(r"([0-9]+)([a-z]+)", ep_start_text, re.I)
+        ep_start_num, ep_start_letter = match.groups()
+
+    ep_start = int(ep_start_num) * int(1e3) if ep_start_letter == 'k' else int(ep_start_num)
     eps_remaining = ep_total - ep_start
     model = load_model(**load_model_params)
 
