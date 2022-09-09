@@ -24,13 +24,13 @@ The file structure for the artefact is outlined below.
 |   +-- ppo.py
 |   +-- rainbow.py
 +-- core
+|   +-- README.md
 |   +-- buffer.py
 |   +-- create.py
 |   +-- enums.py
 |   +-- env_details.py
 |   +-- exceptions.py
 |   +-- parameters.py
-|   +-- README.md
 |   +-- template.yaml
 +-- intrinsic
 |   +-- _im_base.py
@@ -62,14 +62,15 @@ The file structure for the artefact is outlined below.
 |   +-- model_utils.py
 |   +-- plotter.py
 |   +-- render.py
+|   +-- validate.py
 +-- .coverage
 +-- .coveragerc
 +-- LICENSE
++-- README.md
 +-- main.py
 +-- parameters.yaml
-+-- README.md
 +-- requirements.txt
-+-- rl_with_atari.ipynb
++-- demo.ipynb
 ```
 
 - `\agents` - contains the RL algorithm implementations
