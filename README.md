@@ -84,7 +84,9 @@ The file structure for the artefact is outlined below.
 
 This project requires a Python 3.10 environment, which can be created with the following instructions:
 
-1. Create (and activate) a new environment.
+1. Install [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/?q=build+tools) (required for SuperSuit). 
+
+2. Create (and activate) a new environment.
 
    - Linux or Mac
 
@@ -100,7 +102,7 @@ This project requires a Python 3.10 environment, which can be created with the f
    activate rlatari
    ```
 
-2. Clone the repository, navigate to the `rl_atari_games/` folder and install the required dependencies.
+3. Clone the repository, navigate to the `rl_atari_games/` folder and install the required dependencies.
 
     _(Note)_ a requirements.txt file is accessible within this folder detailing a list of the required dependencies.
 
@@ -113,13 +115,13 @@ This project requires a Python 3.10 environment, which can be created with the f
     pip install -r requirements.txt
     ```
 
-3. Create an [IPython kernel](http://ipython.readthedocs.io/en/stable/install/kernel_install.html) for the `rlatari` environment.
+4. Create an [IPython kernel](http://ipython.readthedocs.io/en/stable/install/kernel_install.html) for the `rlatari` environment.
 
     ```bash
     python -m ipykernel install --user --name rlatari --display-name "rlatari"
     ```
 
-4. Run the `jupyter-lab` command to start JupyterLab and access the Jupyter Notebook named `rl_with_atari.ipynb`, or run the `main.py` file.
+5. Run the `jupyter-lab` command to start JupyterLab and access the Jupyter Notebook named `rl_with_atari.ipynb`, or run the `main.py` file.
 
     _(Note)_ running the `main.py` file will train the models. It is advised to examine this file before running it.
 
