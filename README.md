@@ -99,7 +99,7 @@ This project requires a Python 3.10 environment, which can be created with the f
 
    ```bash
    conda create --name rlatari python=3.10
-   activate rlatari
+   conda activate rlatari
    ```
 
 3. Clone the repository, navigate to the `rl_atari_games/` folder and install the required dependencies.
@@ -110,8 +110,8 @@ This project requires a Python 3.10 environment, which can be created with the f
     git clone https://github.com/Achronus/rl_atari_games.git
     cd rl_atari_games
     conda install -c conda-forge jupyterlab
-    conda install pytorch torchvision cudatoolkit=11.3 -c pytorch
-    pip install gym[atari,accept-rom-license,other]
+    conda install pytorch torchvision pytorch-cuda=11.7 -c pytorch -c nvidia
+    pip install gymnasium[atari,accept-rom-license,other]
     pip install -r requirements.txt
     ```
 
