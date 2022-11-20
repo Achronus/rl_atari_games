@@ -28,14 +28,13 @@ def main():
         device = set_device()
 
     # Train on multiple environments
-    for env in ['primary', env2, env3]:
-        # Create agent instances
-        dqn = create_model('rainbow', env=env, device=device)
-        ppo = create_model('ppo', env=env, device=device)
+    # for env in ['primary', env2, env3]:
+    #     model = create_model('dqn', env=env, device=device)
+    #     model.train(num_episodes=NUM_EPISODES, print_every=1000, save_count=SAVE_EVERY)
 
-        # Train model
-        dqn.train(num_episodes=NUM_EPISODES, print_every=1000, save_count=SAVE_EVERY)
-        ppo.train(num_episodes=NUM_EPISODES, print_every=1000, save_count=SAVE_EVERY)
+    # Train on single environment
+    model = create_model('dqn', env='primary', device=device)
+    model.train(num_episodes=NUM_EPISODES, print_every=1000, save_count=SAVE_EVERY)
 
 
 if __name__ == '__main__':
