@@ -1,5 +1,5 @@
-import gym
-from gym.wrappers import (
+import gymnasium as gym
+from gymnasium.wrappers import (
     FrameStack,
     GrayScaleObservation,
     ResizeObservation,
@@ -42,9 +42,9 @@ class EnvDetails:
         :param visualize (bool) - flag to enable video rendering, default is False
         """
         if visualize:
-            env = gym.make(self.gym_name, render_mode='human')
+            env = gym.make('GymV26Environment-v0', env_id=self.gym_name, render_mode='human')
         else:
-            env = gym.make(self.gym_name)
+            env = gym.make('GymV26Environment-v0', env_id=self.gym_name)
 
         if self.capture_video and model_type != 'init':
             date_time = datetime.now().strftime("date%d%m%Y_time%H%M%S")
@@ -57,7 +57,6 @@ class EnvDetails:
         env = FrameStack(env, num_stack=self.stack_size)  # default: 4 frames at a time
 
         # Set seed for environment
-        env.seed(self.seed)
         env.action_space.seed(self.seed)
         env.observation_space.seed(self.seed)
 
