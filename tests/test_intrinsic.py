@@ -22,6 +22,9 @@ def curiosity_params(env_details) -> CuriosityParameters:
     return CuriosityParameters(input_shape=env_details.input_shape,
                                n_actions=env_details.n_actions)
 
+@pytest.fixture
+def optim_params() -> dict:
+    return {'lr': 0.001, 'eps': 0.003}
 
 @pytest.fixture
 def device() -> str:
@@ -34,8 +37,8 @@ def curiosity_model(env_details, device) -> CuriosityModel:
 
 
 @pytest.fixture
-def controller(curiosity_params, device) -> IMController:
-    return IMController('curiosity', curiosity_params, device)
+def controller(curiosity_params, optim_params, device) -> IMController:
+    return IMController('curiosity', curiosity_params, optim_params, device)
 
 
 @pytest.fixture
@@ -53,9 +56,9 @@ def experience(state, actions) -> IMExperience:
     return IMExperience(state, state, actions)
 
 
-def test_imcontroller_invalid_type(curiosity_params, device) -> None:
+def test_imcontroller_invalid_type(curiosity_params, optim_params, device) -> None:
     with pytest.raises(ValueError):
-        IMController('None', curiosity_params, device)
+        IMController('None', curiosity_params, optim_params, device)
 
 
 def test_imcontroller_init_valid(controller) -> None:
@@ -81,10 +84,14 @@ def test_imcontroller_model_forward_valid(controller, state, actions) -> None:
 
 
 def test_imcontroller_module_get_loss_valid(controller, experience) -> None:
-    forward_loss, inverse_loss = controller.module.get_loss(experience)
-    valid_forward = forward_loss.shape == (32, 1)
-    valid_inverse = inverse_loss.shape == (32, 1)
-    assert all([valid_forward, valid_inverse])
+    loss, im_loss = controller.module.compute_loss(experience, to_tensor(0.056))
+
+    def check(item) -> bool:
+        return torch.numel(item) == 1 and type(item.item()) == float
+
+    valid_loss = check(loss)
+    valid_im_loss = check(im_loss)
+    assert all([valid_loss, valid_im_loss])
 
 
 def test_imcontroller_module_compute_loss_valid(controller, experience) -> None:

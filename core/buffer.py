@@ -82,6 +82,7 @@ class SumTree:
         self.position = 0  # Pointer
         self.data_count = 0  # Track data entries (not placeholders)
         self.capacity = capacity
+        self.device = device
         self.n_steps = n_steps
 
         self.num_nodes = 2 * capacity - 1  # All nodes
@@ -195,7 +196,7 @@ class SumTree:
         comparison_bools = torch.gt(priorities, left_child_values).to(torch.long)  # priority > left_child = 1, else 0
 
         # Set next indices
-        next_indices = child_indices[comparison_bools, torch.arange(indices.size()[0])]
+        next_indices = child_indices[comparison_bools.to('cpu'), torch.arange(indices.size()[0])]
 
         # Reduce priorities to move down tree
         next_priorities = priorities - (comparison_bools * left_child_values)

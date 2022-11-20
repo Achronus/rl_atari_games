@@ -183,7 +183,7 @@ class RainbowDQN(Agent):
             for i_episode in range(1+custom_ep_start, num_episodes+1+custom_ep_start):
                 # Initialize priority weight increase per episode
                 self.priority_weight_increase = min(i_episode / num_episodes, 1)
-                state = self.env.reset()  # Initialize state
+                state, info = self.env.reset()  # Initialize state
                 score = 0.
                 avg_returns, train_losses = [], []
                 im_losses = []
@@ -192,7 +192,7 @@ class RainbowDQN(Agent):
                 for timestep in range(self.params.max_timesteps):
                     state = normalize(to_tensor(state)).to(self.device)
                     action = self.act(state.unsqueeze(0))  # Generate an action
-                    next_state, reward, done, info = self.env.step(action)  # Take an action
+                    next_state, reward, done, truncated, info = self.env.step(action)  # Take an action
                     score += reward
                     reward = max(min(reward, self.params.reward_clip), -self.params.reward_clip)  # clip reward
 
@@ -218,7 +218,7 @@ class RainbowDQN(Agent):
                     state = next_state
 
                     # Check if finished
-                    if done:
+                    if done or truncated:
                         break
 
                 # Update target network

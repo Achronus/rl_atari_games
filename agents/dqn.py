@@ -176,7 +176,7 @@ class DQN(Agent):
             for i_episode in range(1+custom_ep_start, num_episodes+1+custom_ep_start):
                 # Initialize state and score
                 score = 0
-                state = self.env.reset()
+                state, info = self.env.reset()
                 actions, train_losses, im_losses = [], [], []
                 self.i_episode = i_episode
 
@@ -184,7 +184,7 @@ class DQN(Agent):
                 for t in range(self.params.max_timesteps):
                     state = normalize(to_tensor(state)).to(self.device)
                     action = self.act(state, eps)  # Generate an action
-                    next_state, reward, done, info = self.env.step(action)  # Take an action
+                    next_state, reward, done, truncated, info = self.env.step(action)  # Take an action
 
                     # Perform learning
                     exp = DQNExperience(state.cpu(), action, reward, normalize(to_tensor(next_state)), done)
@@ -195,7 +195,7 @@ class DQN(Agent):
                     score += reward
 
                     # Check if finished
-                    if done:
+                    if done or truncated:
                         break
 
                     # Add items to list

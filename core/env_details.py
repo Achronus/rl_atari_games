@@ -42,7 +42,7 @@ class EnvDetails:
         :param visualize (bool) - flag to enable video rendering, default is False
         """
         if visualize:
-            env = gym.make('GymV26Environment-v0', env_id=self.gym_name, render_mode='human')
+            env = gym.make('GymV26Environment-v0', env_id=self.gym_name, render_mode="human")
         else:
             env = gym.make('GymV26Environment-v0', env_id=self.gym_name)
 

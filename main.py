@@ -33,7 +33,7 @@ def main():
     #     model.train(num_episodes=NUM_EPISODES, print_every=1000, save_count=SAVE_EVERY)
 
     # Train on single environment
-    model = create_model('dqn', env='primary', device=device)
+    model = create_model('ppo', env='primary', device=device)
     model.train(num_episodes=NUM_EPISODES, print_every=1000, save_count=SAVE_EVERY)
 
 

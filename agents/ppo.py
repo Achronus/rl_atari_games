@@ -101,7 +101,7 @@ class PPO(Agent):
     def generate_rollouts(self) -> None:
         """Generates a set of rollouts and stores them in the buffer."""
         # Initialize values for each episode
-        state = self.envs.reset()
+        state, info = self.envs.reset()
         rewards = []
 
         # Iterate over rollout size
@@ -113,7 +113,7 @@ class PPO(Agent):
                 action_probs, state_values = self.network.forward(self.encode_state(state))
 
             preds = self.act(action_probs)  # Get an action
-            next_state, reward, done, info = self.envs.step(preds['action'].numpy())  # Take an action
+            next_state, reward, done, _, info = self.envs.step(preds['action'].numpy())  # Take an action
             rewards.append(reward)
             reward = np.clip(reward, a_min=-1, a_max=1)  # clip reward
 

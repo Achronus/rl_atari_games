@@ -58,10 +58,10 @@ def test_model(model: Agent, episodes: int = 100) -> list:
     ep_scores = []
 
     for episode in range(1, episodes + 1):
-        state = env.reset()
-        done = False
+        state, info = env.reset()
+        done, truncated = False, False
         score = 0
-        while not done:
+        while not done or truncated:
             state = normalize(to_tensor(state)).to(model.device)
             if type(model) == DQN or type(model) == RainbowDQN:
                 if type(model) == RainbowDQN:
@@ -74,7 +74,7 @@ def test_model(model: Agent, episodes: int = 100) -> list:
                 preds = model.act(action_probs)  # Generate an action
                 action = preds['action'].item()
 
-            next_state, reward, done, info = env.step(action)  # Take an action
+            next_state, reward, done, truncated, info = env.step(action)  # Take an action
             state = next_state
             score += reward
 

@@ -37,7 +37,7 @@ def test_cnn_model_forward_valid(n_actions, input_shape) -> None:
 
 def test_load_model_invalid_filename() -> None:
     try:
-        dqn = load_model('test2', device='cpu', model_type='dqn')
+        dqn = load_model('test2', device='cpu')
         assert False
     except AssertionError:
         assert True
@@ -51,19 +51,11 @@ def test_load_model_invalid_model_type() -> None:
                 file.write('test.')
             file.close()
 
-        model = load_model('test', device='cpu', model_type='a2c')
+        model = load_model('test', device='cpu')
         os.remove(filepath)
         assert False
     except (ValueError, _pickle.UnpicklingError):
         os.remove(filepath)
-        assert True
-
-
-def test_load_model_rqdn_invalid_model_file() -> None:
-    try:
-        model = load_model('dqn_example', device='cpu', model_type='rainbow')
-        assert False
-    except (MissingCheckpointKeyError, InvalidModelTypeError):
         assert True
 
 
@@ -75,7 +67,7 @@ def test_load_model_dqn_invalid_file_content() -> None:
                 file.write('test.')
             file.close()
 
-        model = load_model('test3', device='cpu', model_type='dqn')
+        model = load_model('test3', device='cpu')
         os.remove(filepath)
         assert False
     except _pickle.UnpicklingError:
@@ -85,7 +77,7 @@ def test_load_model_dqn_invalid_file_content() -> None:
 
 def test_load_model_dqn_valid() -> None:
     try:
-        model = load_model('dqn_example', device='cpu', model_type='dqn')
+        model = load_model('dqn_batch32_buffer1k_SpaInv_ep5', device='cpu')
         assert True
     except (ValueError, _pickle.UnpicklingError):
         assert False

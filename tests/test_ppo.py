@@ -43,7 +43,7 @@ def ppo(env_details, model_params, ppo_params, device) -> PPO:
 
 
 def test_ppo_act_valid(ppo, device) -> None:
-    state = normalize(to_tensor(ppo.envs.reset()))
+    state = normalize(to_tensor(ppo.envs.reset()[0]))
     action_probs = ppo.network(state.to(device))[0]
     preds = ppo.act(action_probs)
     assert type(preds) == dict
@@ -75,7 +75,7 @@ def test_ppo_learn_valid(ppo) -> None:
 
 def test_ppo_clipped_value_loss_valid(ppo, device) -> None:
     # Get state values
-    state = normalize(to_tensor(ppo.envs.reset())).to(device)
+    state = normalize(to_tensor(ppo.envs.reset()[0])).to(device)
     state_values = ppo.network(state)[1]
 
     # Compute other metrics
@@ -88,7 +88,7 @@ def test_ppo_clipped_value_loss_valid(ppo, device) -> None:
 
 def test_ppo_clip_surrogate_valid(ppo, device) -> None:
     # Get predictions
-    state = normalize(to_tensor(ppo.envs.reset())).to(device)
+    state = normalize(to_tensor(ppo.envs.reset()[0])).to(device)
     action_probs, state_values = ppo.network(state)
     preds = ppo.act(action_probs)
 
